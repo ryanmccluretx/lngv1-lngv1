@@ -1,0 +1,56 @@
+{
+    "indexes": {
+        "Total": 0,
+        "Data": []
+    },
+    "items": [
+        {
+            "dashboard_id": "93e59991-d250-48a8-a428-34805309389d",
+            "group_id": "Default",
+            "item_id": "00215d59-3537-4176-8145-d544a051da16"
+        },
+        {
+            "dashboard_id": "46f2a2ea-ef7e-4501-bd30-889463d3d913",
+            "group_id": "Default",
+            "item_id": "7101784a-fd72-4dca-912a-323f16794aea"
+        },
+        {
+            "dashboard_id": "76456012-2e48-40ff-98cc-7cf1d3d1f810",
+            "group_id": "Cameron LNG",
+            "item_id": "ae3c404f-b117-47c6-93ee-0b5efbc96b83"
+        },
+        {
+            "dashboard_id": "5b533adf-3eed-4121-b370-b00be2a0c462",
+            "group_id": "Default",
+            "item_id": "bfc4bb7d-1fa1-4f79-86cc-19ad4bbc09c0"
+        },
+        {
+            "dashboard_id": "46f2a2ea-ef7e-4501-bd30-889463d3d913",
+            "group_id": "wsi_admin",
+            "item_id": "dcd11f0a-7741-4f1f-a937-dea2ef54998a"
+        },
+        {
+            "dashboard_id": "1c9e6ad2-b553-45c0-b8cd-70df58bf8ab6",
+            "group_id": "zephyr-demo",
+            "item_id": "fcf984f7-204a-4d00-a7aa-aaaa758a3573"
+        }
+    ],
+    "name": "dashboards_groups",
+    "schema": [
+        {
+            "ColumnName": "item_id",
+            "ColumnType": "uuid",
+            "PK": true
+        },
+        {
+            "ColumnName": "dashboard_id",
+            "ColumnType": "string",
+            "PK": false
+        },
+        {
+            "ColumnName": "group_id",
+            "ColumnType": "string",
+            "PK": false
+        }
+    ]
+}

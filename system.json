@@ -1,9 +1,9 @@
 {
     "auth": true,
-    "description": "",
-    "messaging_url": "community.clearblade.com:1883",
-    "name": "ia-components",
-    "platform_url": "https://community.clearblade.com",
-    "system_key": "88a2fef10cda9cf4d4afb4acc7ef01",
-    "system_secret": "88A2FEF10CA8F7DEB980E29DF93C"
+    "description": "Develop Template",
+    "messaging_url": "demo.clearblade.com:1883",
+    "name": "ia-ryan-test",
+    "platform_url": "https://demo.clearblade.com",
+    "system_key": "c2d08bfe0cd0e0e9fbbbbdfabdd801",
+    "system_secret": "unused"
 }
