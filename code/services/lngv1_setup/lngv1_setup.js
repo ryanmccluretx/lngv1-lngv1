@@ -1083,6 +1083,28 @@ function lngv1_setup(req, resp) {
 
       log("Dashboards groups entry created successfully: " + JSON.stringify(data));
 
+
+      // Execute createSuperUser service
+      var codeService = ClearBlade.Code();
+      codeService.execute("createSuperUser", {
+        "email": "iacomponentr@clearblade.com",
+        "first_name": "IA",
+        "last_name": "Component",
+        "password": "iauserpassword",
+        "group_ids": [
+          "default"
+        ]
+      }, function (err, data) {
+        if (err) {
+          resp.error("Failed to execute createSuperUser service: " + JSON.stringify(err));
+          return;
+        }
+
+        log("createSuperUser service executed successfully: " + JSON.stringify(data));
+
+
+      });
+
       // Create table items for asset types
       const tableItemsUrl = "https://demo.clearblade.com/api/v/1/code/" + req.systemKey + "/createTableItems?id=assetTypes.create";
 
