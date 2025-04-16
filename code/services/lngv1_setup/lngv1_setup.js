@@ -6,9 +6,8 @@
 
 function lngv1_setup(req, resp) {
   const params = req.params;
+  const mqttClient = new MQTT.Client();
 
-  // Create dashboard entry
-  var dashboardCollection = ClearBlade.Collection({ collectionName: "dashboards" });
   var dashboardData = {
     id: "76456012-2e48-40ff-98cc-7cf1d3d1f810",
     label: "Cameron LNG",
@@ -1059,1494 +1058,1585 @@ function lngv1_setup(req, resp) {
     }
   };
 
-  // Create the dashboard first
-  dashboardCollection.create(dashboardData, function (err, data) {
-    if (err) {
-      resp.error("Failed to create dashboard: " + JSON.stringify(err) + data);
-      return;
-    }
+  var dashboardsGroupsData = {
+    dashboard_id: "76456012-2e48-40ff-98cc-7cf1d3d1f810",
+    group_id: "default"
+  };
 
-    log("Dashboard created successfully: " + JSON.stringify(data));
+  // Create table items for asset types
+  const tableItemsUrl = "https://demo.clearblade.com/api/v/1/code/" + req.systemKey + "/createTableItems?id=assetTypes.create";
 
-    // Create entry in dashboards_groups collection
-    var dashboardsGroupsCollection = ClearBlade.Collection({ collectionName: "dashboards_groups" });
-    var dashboardsGroupsData = {
-      dashboard_id: "76456012-2e48-40ff-98cc-7cf1d3d1f810",
-      group_id: "default"
-    };
-
-    dashboardsGroupsCollection.create(dashboardsGroupsData, function (err, data) {
-      if (err) {
-        resp.error("Failed to create dashboards_groups entry: " + JSON.stringify(err));
-        return;
+  // First asset type - Cargo Container
+  const cargoContainerOptions = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "ClearBlade-UserToken": ""
+    },
+    body: JSON.stringify({
+      "name": "assetTypes.create",
+      "body": {
+        "item": {
+          "id": "CargoContainer",
+          "label": "Cargo Container",
+          "description": "",
+          "icon": "",
+          "entity_type": "asset",
+          "schema": [
+            {
+              "calculated_attribute": false,
+              "attribute_type": "text",
+              "attribute_edit_widget": "input",
+              "hide_attribute": false,
+              "attribute_view_widget": "label",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "readonly_attribute": false,
+              "uuid": "8bfd9d11-e0a0-4fa9-939d-edca99e4c4cb",
+              "attribute_name": "operator_name",
+              "attribute_label": "Operator Name",
+              "custom_edit_settings": {}
+            },
+            {
+              "attribute_edit_widget": "input",
+              "attribute_view_widget": "label",
+              "hide_attribute": false,
+              "keep_history": true,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "attribute_name": "company_name",
+              "attribute_type": "text",
+              "attribute_label": "Company Name",
+              "custom_edit_settings": {},
+              "custom_view_settings": {},
+              "uuid": "3643c46e-2d7b-4175-a45f-1ee7c302b37f"
+            },
+            {
+              "attribute_type": "dateTime",
+              "attribute_label": "Service Date",
+              "keep_history": true,
+              "hide_attribute": false,
+              "custom_view_settings": {},
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "c426b180-86b2-41a9-a776-1f45517ecc24",
+              "attribute_name": "service_date",
+              "attribute_edit_widget": "datePicker",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "datePicker"
+            },
+            {
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "uuid": "f1f3effc-bc15-4ce5-90a9-d9a742ca5fb3",
+              "attribute_type": "dateTime",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "datePicker",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "attribute_name": "calibration_date",
+              "attribute_label": "Calibration Date",
+              "attribute_edit_widget": "datePicker",
+              "calculated_attribute": false
+            },
+            {
+              "custom_edit_settings": {},
+              "attribute_view_widget": "datePicker",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "attribute_name": "deliver_by",
+              "attribute_type": "dateTime",
+              "attribute_label": "Deliver By",
+              "attribute_edit_widget": "datePicker",
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "hide_attribute": false,
+              "uuid": "7fc71e2c-8166-4b48-b3c9-eef236d7afef"
+            },
+            {
+              "attribute_name": "origin",
+              "attribute_type": "text",
+              "attribute_edit_widget": "input",
+              "attribute_view_widget": "label",
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "attribute_label": "Origin",
+              "custom_edit_settings": {},
+              "custom_view_settings": {},
+              "uuid": "4f62ce46-350e-4b1d-9683-2f5284a20485"
+            },
+            {
+              "attribute_view_widget": "label",
+              "custom_view_settings": {},
+              "hide_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "4b5c86df-6d6e-4519-aefd-665a39896553",
+              "attribute_name": "destination",
+              "attribute_label": "Destination",
+              "attribute_edit_widget": "input",
+              "readonly_attribute": false,
+              "attribute_type": "text",
+              "custom_edit_settings": {},
+              "keep_history": true
+            },
+            {
+              "attribute_name": "tank_temperature",
+              "attribute_type": "number",
+              "attribute_label": "Tank Temperature",
+              "attribute_edit_widget": "number",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {
+                "units": "°C",
+                "min": -180,
+                "max": -140,
+                "darkModeColor": {
+                  "colorType": "theme",
+                  "value": "externalLink",
+                  "isDarkMode": true
+                },
+                "lightModeColor": {
+                  "colorType": "theme",
+                  "value": "externalLink",
+                  "isDarkMode": false
+                },
+                "gaugeBreakpoints": []
+              },
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "a4bc6ae5-14e7-4a6c-a59f-a449458e45e7"
+            },
+            {
+              "attribute_edit_widget": "slider",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "gauge",
+              "hide_attribute": false,
+              "uuid": "d5bc9965-69c9-4c04-b615-d816f57fda5e",
+              "attribute_name": "pressure",
+              "attribute_label": "Pressure",
+              "keep_history": true,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "attribute_type": "number",
+              "custom_view_settings": {
+                "units": "psig",
+                "min": 50,
+                "max": 120
+              }
+            },
+            {
+              "attribute_type": "number",
+              "attribute_label": "Volume",
+              "attribute_edit_widget": "number",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "label",
+              "hide_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "0298039b-f8bd-4980-aa45-a4d28fd2ec12",
+              "attribute_name": "volume",
+              "custom_view_settings": {
+                "fontSize": 16,
+                "units": "m^3",
+                "trueLabel": "",
+                "falseLabel": ""
+              },
+              "keep_history": true,
+              "readonly_attribute": false
+            },
+            {
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "hide_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "dafb47cf-9147-403e-95f3-4289a30ecc8a",
+              "attribute_name": "weight",
+              "attribute_type": "number",
+              "attribute_label": "Weight",
+              "attribute_edit_widget": "slider",
+              "custom_edit_settings": {},
+              "readonly_attribute": false
+            },
+            {
+              "attribute_type": "boolean",
+              "attribute_view_widget": "toggle",
+              "custom_view_settings": {},
+              "uuid": "edb14d28-6530-4b32-b6d6-51f999225231",
+              "calculated_attribute": false,
+              "attribute_name": "perishable",
+              "attribute_label": "Perishable",
+              "attribute_edit_widget": "toggle",
+              "custom_edit_settings": {},
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false
+            },
+            {
+              "calculated_attribute": false,
+              "attribute_name": "status",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "label",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "uuid": "9cd09f9f-4539-49e9-af53-ba204c4d3fee",
+              "attribute_type": "text",
+              "attribute_label": "Status",
+              "attribute_edit_widget": "input"
+            },
+            {
+              "keep_history": true,
+              "calculated_attribute": false,
+              "attribute_label": "Time on Location",
+              "attribute_type": "number",
+              "attribute_edit_widget": "slider",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "label",
+              "custom_view_settings": {
+                "trueLabel": "",
+                "falseLabel": "",
+                "fontSize": 16,
+                "units": ""
+              },
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "attribute_name": "time_on_location",
+              "uuid": "d3b369b8-dd8d-430a-aa8c-a38fb09847d5"
+            }
+          ],
+          "controls_schema": [],
+          "device_type": "",
+          "parent_child_options": {
+            "propagate_location_to_root": true,
+            "show_location_on_map": true,
+            "store_updates_on_root": false
+          },
+          "icon_svg": {
+            "iconKey": "DirectionsBoat",
+            "type": "mui"
+          },
+          "default_history_view": "",
+          "hide_attribute_if_undefined": false,
+          "reporting_interval": null,
+          "attributes_reporting_intervals": null,
+          "categories": [
+            {
+              "attributes": [],
+              "controls": [],
+              "id": "__uncategorized__",
+              "label": "Uncategorized",
+              "settings": {
+                "collapsed": false
+              }
+            }
+          ]
+        },
+        "groupIds": [
+          "default"
+        ]
       }
+    })
+  };
 
-      log("Dashboards groups entry created successfully: " + JSON.stringify(data));
+  // Second asset type - LNG Storage Tank
+  const lngStorageTankOptions = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "ClearBlade-UserToken": ""
+    },
+    body: JSON.stringify({
+      "name": "assetTypes.create",
+      "body": {
+        "item": {
+          "id": "LNG Storage Tank",
+          "label": "LNG Storage Tank",
+          "description": "",
+          "icon": "",
+          "entity_type": "asset",
+          "schema": [
+            {
+              "attribute_name": "Filled Volume",
+              "attribute_type": "number",
+              "attribute_label": "Filled Volume",
+              "attribute_edit_widget": "number",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {
+                "units": "cubic meters",
+                "max": 160000
+              },
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "986ea161-5f4b-4e38-8191-c273f5cb297c"
+            },
+            {
+              "attribute_name": "Temperature",
+              "attribute_type": "number",
+              "attribute_label": "Temperature",
+              "attribute_edit_widget": "number",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {
+                "min": -140,
+                "max": -180,
+                "units": "°C"
+              },
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "d5f13ddb-2041-46f7-8d80-b2be1faf3842"
+            },
+            {
+              "attribute_name": "Pressure",
+              "attribute_type": "number",
+              "attribute_label": "Pressure",
+              "attribute_edit_widget": "number",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {
+                "min": 50,
+                "max": 120,
+                "units": "psig"
+              },
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "23fdbc3d-9ae7-4ad8-9076-d037405e3b9c"
+            }
+          ],
+          "controls_schema": [],
+          "device_type": "",
+          "parent_child_options": {
+            "propagate_location_to_root": true,
+            "show_location_on_map": true,
+            "store_updates_on_root": false
+          },
+          "icon_svg": {
+            "svg": '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" viewBox="0 0 100 125" enable-background="new 0 0 100 100" xml:space="preserve"><path d="M93.981,37.601c0-1.146-1.104-2.057-6.493-2.785c-3.7-0.5-8.611-0.775-13.829-0.775c-3.087,0-6.044,0.103-8.729,0.286  v-0.224v-0.754l-0.74-0.132c-0.167-0.03-0.334-0.055-0.5-0.083c1.01-0.575,1.246-1.153,1.246-1.692c0-1.195-1.089-2.564-9.158-3.654  c-5.419-0.732-12.616-1.135-20.264-1.135c-7.648,0-14.845,0.403-20.264,1.135c-8.069,1.09-9.157,2.458-9.157,3.654  c0,0.534,0.227,1.107,1.22,1.68c-0.187,0.035-0.374,0.063-0.56,0.099l-0.734,0.139v0.744c0,3.271,0.027,7.174,0.054,11.029  c0.049,7.062,0.096,13.944-0.051,21.36v0.046c0.069,2.125,3.545,3.896,9.119,5.055c5.23,1.088,12.421,1.756,20.336,1.756  c7.928,0,15.133-0.657,20.365-1.736c5.556-1.146,9.02-2.901,9.089-5.023v-0.027v-0.879c2.631,0.273,5.571,0.436,8.702,0.436  c5.396,0,10.298-0.447,13.859-1.182c3.78-0.779,6.138-1.974,6.185-3.418v-0.019V39.411v-0.512l-0.39-0.07  C93.807,38.453,93.981,38.045,93.981,37.601z M91.611,37.588c-0.423,0.163-1.137,0.376-2.313,0.601  c-0.85-0.123-1.699-0.237-2.55-0.341v-1.231C89.094,36.909,90.757,37.257,91.611,37.588z M78.381,37.133v-1.129  c2.456,0.083,4.625,0.226,6.482,0.406v1.224C82.703,37.405,80.542,37.234,78.381,37.133z M83.464,59.881l-3.218,0.566v-3.008  l3.218-0.567V59.881z M83.464,54.959l-3.218,0.567v-2.974l3.218-0.566V54.959z M83.464,50.073l-3.218,0.567v-3.082l3.218-0.568  V50.073z M83.464,45.078l-3.218,0.567v-2.97l3.218-0.568V45.078z M80.246,62.361l3.218-0.567v2.546  c-1.016,0.123-2.091,0.228-3.218,0.312V62.361z M83.464,40.194l-3.218,0.567v-2.299c1.072,0.069,2.145,0.155,3.218,0.256V40.194z   M76.496,35.954v1.109c-0.954-0.028-1.907-0.047-2.862-0.05c-1.207-0.003-2.413,0.021-3.62,0.059v-1.097  c1.164-0.029,2.366-0.051,3.646-0.051C74.641,35.925,75.581,35.937,76.496,35.954z M68.129,36.036v1.113  c-1.066,0.054-2.133,0.124-3.198,0.21v-1.147C65.934,36.141,66.993,36.082,68.129,36.036z M62.899,31.428  c-0.322,0.215-1.148,0.615-3.134,1.063c-1.819-0.278-3.639-0.525-5.46-0.742v-2.245C59.048,30.074,62.04,30.802,62.899,31.428z   M50.364,64.553l-5.613,0.99v-5.318l5.613-0.99V64.553z M50.364,57.321l-5.613,0.989v-5.267l5.613-0.99V57.321z M50.364,50.141  l-5.613,0.99v-5.428l5.613-0.989V50.141z M50.364,42.8l-5.613,0.99v-5.264l5.613-0.99V42.8z M44.751,67.456l5.613-0.99v4.214  c-1.753,0.224-3.63,0.407-5.613,0.547V67.456z M50.364,35.623l-5.613,0.99v-3.932c1.87,0.117,3.741,0.266,5.613,0.447V35.623z   M42.009,30.738V28.64c3.971,0.126,7.472,0.359,10.412,0.657v2.238C48.952,31.159,45.482,30.891,42.009,30.738z M40.125,28.59v2.078  c-1.55-0.049-3.099-0.085-4.649-0.09c-1.921-0.005-3.842,0.035-5.763,0.101v-2.062c1.838-0.051,3.77-0.081,5.801-0.081  C37.115,28.536,38.643,28.557,40.125,28.59z M17.417,31.593v-2.166c2.895-0.326,6.385-0.593,10.412-0.747v2.07  C24.358,30.913,20.887,31.189,17.417,31.593z M8.129,31.428c0.785-0.572,3.36-1.227,7.404-1.77v2.175  c-1.466,0.189-2.932,0.397-4.398,0.63C9.242,32.026,8.446,31.638,8.129,31.428z M15.506,69.835  c-4.708-0.979-7.638-2.167-7.692-3.344c0.147-7.414,0.099-14.3,0.05-21.367C7.842,41.98,7.82,38.796,7.817,34.847  c9.224-1.702,18.444-2.503,27.659-2.477c2.462,0.007,4.926,0.077,7.39,0.202v38.773c-2.358,0.129-4.828,0.204-7.39,0.204  C27.669,71.549,20.61,70.896,15.506,69.835z M63.138,66.533c-0.038,1.174-2.956,2.353-7.654,3.321  c-0.999,0.206-2.094,0.391-3.234,0.563V33.319c3.629,0.395,7.258,0.906,10.89,1.538L63.138,66.533z M64.931,64.451V38.583  c2.902-0.238,5.803-0.358,8.703-0.35c1.575,0.004,3.151,0.044,4.728,0.119v26.418c-1.515,0.076-3.093,0.123-4.729,0.123  C70.487,64.894,67.547,64.729,64.931,64.451z M92.458,61.48c-0.026,0.799-2.013,1.602-5.21,2.26  c-0.591,0.122-1.234,0.232-1.899,0.338V38.91c2.368,0.264,4.738,0.603,7.109,1.016V61.48z"/><text x="0" y="115" fill="#000000" font-size="5px" font-weight="bold" font-family="\'Helvetica Neue\', Helvetica, Arial-Unicode, Arial, Sans-serif">Created by Nikita Kozin</text><text x="0" y="120" fill="#000000" font-size="5px" font-weight="bold" font-family="\'Helvetica Neue\', Helvetica, Arial-Unicode, Arial, Sans-serif">from the Noun Project</text></svg>',
+            "type": "svg"
+          },
+          "default_history_view": "",
+          "hide_attribute_if_undefined": false,
+          "reporting_interval": null,
+          "attributes_reporting_intervals": null,
+          "categories": [
+            {
+              "attributes": [],
+              "controls": [],
+              "id": "__uncategorized__",
+              "label": "Uncategorized",
+              "settings": {
+                "collapsed": false
+              }
+            }
+          ]
+        },
+        "groupIds": ["default"]
+      }
+    })
+  };
 
+  // Third asset type - Pipeline Monitor
+  const pipelineMonitorOptions = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "ClearBlade-UserToken": ""
+    },
+    body: JSON.stringify({
+      "name": "assetTypes.create",
+      "body": {
+        "item": {
+          "id": "Pipeline Monitor",
+          "label": "Pipeline Monitor",
+          "description": "",
+          "icon": "",
+          "entity_type": "asset",
+          "schema": [
+            {
+              "attribute_edit_widget": "input",
+              "attribute_label": "Operator Name",
+              "attribute_name": "operator_name",
+              "attribute_type": "text",
+              "attribute_view_widget": "label",
+              "calculated_attribute": false,
+              "custom_edit_settings": {},
+              "custom_view_settings": {},
+              "hide_attribute": false,
+              "keep_history": true,
+              "readonly_attribute": false,
+              "uuid": "5240f703-7875-4c70-90db-340210cac17f"
+            },
+            {
+              "attribute_edit_widget": "input",
+              "attribute_label": "Company Name",
+              "attribute_name": "company_name",
+              "attribute_type": "text",
+              "attribute_view_widget": "label",
+              "calculated_attribute": false,
+              "custom_edit_settings": {},
+              "custom_view_settings": {},
+              "hide_attribute": false,
+              "keep_history": true,
+              "readonly_attribute": false,
+              "uuid": "e461c630-129f-496a-881e-9d721d6c5158"
+            },
+            {
+              "attribute_edit_widget": "input",
+              "attribute_label": "Pipeline Name",
+              "attribute_name": "pipeline_name",
+              "attribute_type": "text",
+              "attribute_view_widget": "label",
+              "calculated_attribute": false,
+              "custom_edit_settings": {},
+              "custom_view_settings": {},
+              "hide_attribute": false,
+              "keep_history": false,
+              "readonly_attribute": false,
+              "uuid": "621e7c81-27ae-48b8-918f-1877039fdb96"
+            },
+            {
+              "attribute_edit_widget": "datePicker",
+              "attribute_label": "Service Date",
+              "attribute_name": "service_date",
+              "attribute_type": "dateTime",
+              "attribute_view_widget": "datePicker",
+              "calculated_attribute": false,
+              "custom_edit_settings": {},
+              "custom_view_settings": {},
+              "hide_attribute": false,
+              "keep_history": true,
+              "readonly_attribute": false,
+              "uuid": "ed9ecbf3-39c3-417c-b556-602dbdb05279"
+            },
+            {
+              "attribute_edit_widget": "datePicker",
+              "attribute_label": "Calibration Date",
+              "attribute_name": "calibration_date",
+              "attribute_type": "dateTime",
+              "attribute_view_widget": "datePicker",
+              "calculated_attribute": false,
+              "custom_edit_settings": {},
+              "custom_view_settings": {},
+              "hide_attribute": false,
+              "keep_history": true,
+              "readonly_attribute": false,
+              "uuid": "91aeada3-1c04-4aa6-9e0d-b287c3ce2063"
+            },
+            {
+              "attribute_edit_widget": "number",
+              "attribute_label": "Pressure",
+              "attribute_name": "pressure",
+              "attribute_type": "number",
+              "attribute_view_widget": "gauge",
+              "custom_edit_settings": {},
+              "custom_view_settings": {
+                "max": 2000,
+                "units": "psi"
+              },
+              "hide_attribute": false,
+              "keep_history": true,
+              "readonly_attribute": false,
+              "uuid": "037fb146-3d15-498b-8e43-afa912e02518"
+            },
+            {
+              "attribute_edit_widget": "slider",
+              "attribute_label": "Flow rate",
+              "attribute_name": "flow_rate",
+              "attribute_type": "number",
+              "attribute_view_widget": "gauge",
+              "custom_edit_settings": {
+                "units": "m/s"
+              },
+              "custom_view_settings": {
+                "darkModeColor": {
+                  "colorType": "custom",
+                  "isDarkMode": true,
+                  "value": ""
+                },
+                "gaugeBreakpoints": [
+                  {
+                    "breakpointValue": 0,
+                    "darkModeColor": {
+                      "colorType": "custom",
+                      "isDarkMode": true,
+                      "value": ""
+                    },
+                    "lightModeColor": {
+                      "colorType": "custom",
+                      "isDarkMode": false,
+                      "value": ""
+                    },
+                    "uuid": ""
+                  }
+                ],
+                "lightModeColor": {
+                  "colorType": "custom",
+                  "isDarkMode": false,
+                  "value": ""
+                },
+                "max": 100,
+                "min": 0,
+                "units": "m/s"
+              },
+              "hide_attribute": false,
+              "keep_history": true,
+              "readonly_attribute": false,
+              "uuid": "3cd562ca-cdda-4003-abd1-a843e5f6951a"
+            },
+            {
+              "attribute_edit_widget": "slider",
+              "attribute_label": "Temperature",
+              "attribute_name": "temperature",
+              "attribute_type": "number",
+              "attribute_view_widget": "gauge",
+              "custom_edit_settings": {
+                "units": "°C"
+              },
+              "custom_view_settings": {
+                "units": "°C"
+              },
+              "hide_attribute": false,
+              "keep_history": true,
+              "readonly_attribute": false,
+              "uuid": "8d5b48c3-87e4-48e2-9a77-77678cdeeae7"
+            },
+            {
+              "attribute_edit_widget": "toggle",
+              "attribute_label": "Valve status",
+              "attribute_name": "valve_status",
+              "attribute_type": "boolean",
+              "attribute_view_widget": "toggle",
+              "custom_edit_settings": {},
+              "custom_view_settings": {},
+              "hide_attribute": false,
+              "keep_history": true,
+              "readonly_attribute": false,
+              "uuid": "eba30144-3ab2-4626-b441-745648a5128d"
+            },
+            {
+              "attribute_edit_widget": "slider",
+              "attribute_label": "Total Flow",
+              "attribute_name": "total_flow",
+              "attribute_type": "number",
+              "attribute_view_widget": "gauge",
+              "calculated_attribute": false,
+              "custom_edit_settings": {},
+              "custom_view_settings": {},
+              "hide_attribute": false,
+              "keep_history": true,
+              "readonly_attribute": false,
+              "uuid": "3d4c0bbd-e3f7-414f-93c2-83b50e623873"
+            }
+          ],
+          "controls_schema": [],
+          "device_type": "",
+          "parent_child_options": {
+            "propagate_location_to_root": true,
+            "show_location_on_map": true,
+            "store_updates_on_root": false
+          },
+          "default_history_view": "",
+          "hide_attribute_if_undefined": false,
+          "reporting_interval": null,
+          "attributes_reporting_intervals": null,
+          "categories": [
+            {
+              "attributes": [],
+              "controls": [],
+              "id": "__uncategorized__",
+              "label": "Uncategorized",
+              "settings": {
+                "collapsed": false
+              }
+            },
+            {
+              "attributes": [
+                "operator_name",
+                "company_name",
+                "pipeline_name",
+                "service_date",
+                "calibration_date"
+              ],
+              "controls": [],
+              "id": "28e9d0d4-96f7-426d-8a0f-d20500bf0ffa",
+              "label": "Static",
+              "settings": {
+                "collapsed": false
+              }
+            },
+            {
+              "attributes": [
+                "pressure",
+                "flow_rate",
+                "temperature",
+                "valve_status",
+                "total_flow"
+              ],
+              "controls": [],
+              "id": "bdd57aa0-8252-47df-9573-00114269005c",
+              "label": "Dynamic",
+              "settings": {
+                "collapsed": false
+              }
+            }
+          ]
+        },
+        "groupIds": ["default"]
+      }
+    })
+  };
+
+  // Fourth asset type - Gas Monitor
+  const gasMonitorOptions = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "ClearBlade-UserToken": ""
+    },
+    body: JSON.stringify({
+      "name": "assetTypes.create",
+      "body": {
+        "item": {
+          "id": "GasMonitor",
+          "label": "Gas Monitor",
+          "description": "",
+          "icon": "",
+          "entity_type": "asset",
+          "schema": [
+            {
+              "readonly_attribute": false,
+              "uuid": "5240f703-7875-4c70-90db-340210cac17f",
+              "hide_attribute": false,
+              "attribute_view_widget": "label",
+              "calculated_attribute": false,
+              "attribute_type": "text",
+              "keep_history": true,
+              "attribute_name": "operator_name",
+              "attribute_label": "Operator Name",
+              "custom_view_settings": {},
+              "attribute_edit_widget": "input",
+              "custom_edit_settings": {}
+            },
+            {
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "attribute_name": "company_name",
+              "custom_edit_settings": {},
+              "hide_attribute": false,
+              "uuid": "e461c630-129f-496a-881e-9d721d6c5158",
+              "attribute_view_widget": "label",
+              "custom_view_settings": {},
+              "attribute_edit_widget": "input",
+              "keep_history": true,
+              "attribute_label": "Company Name",
+              "attribute_type": "text"
+            },
+            {
+              "attribute_type": "dateTime",
+              "attribute_edit_widget": "datePicker",
+              "uuid": "ed9ecbf3-39c3-417c-b556-602dbdb05279",
+              "readonly_attribute": false,
+              "hide_attribute": false,
+              "attribute_label": "Service Date",
+              "attribute_view_widget": "datePicker",
+              "attribute_name": "service_date",
+              "calculated_attribute": false,
+              "custom_edit_settings": {},
+              "custom_view_settings": {},
+              "keep_history": true
+            },
+            {
+              "attribute_view_widget": "datePicker",
+              "readonly_attribute": false,
+              "attribute_type": "dateTime",
+              "attribute_name": "calibration_date",
+              "attribute_label": "Calibration Date",
+              "calculated_attribute": false,
+              "custom_view_settings": {},
+              "uuid": "91aeada3-1c04-4aa6-9e0d-b287c3ce2063",
+              "keep_history": true,
+              "hide_attribute": false,
+              "custom_edit_settings": {},
+              "attribute_edit_widget": "datePicker"
+            },
+            {
+              "attribute_name": "sensor_info",
+              "attribute_type": "text",
+              "attribute_label": "Sensor Info",
+              "attribute_edit_widget": "input",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "label",
+              "custom_view_settings": {},
+              "keep_history": false,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "196c1f52-6d81-4d16-b28e-3d7c6738586b"
+            },
+            {
+              "attribute_name": "gas_sensor_type",
+              "attribute_type": "text",
+              "attribute_label": "Gas Sensor Type",
+              "attribute_edit_widget": "input",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "label",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "896106dc-d5ff-43a7-b369-3fa288399d06"
+            },
+            {
+              "custom_view_settings": {
+                "units": "psi"
+              },
+              "readonly_attribute": false,
+              "attribute_name": "pressure",
+              "attribute_edit_widget": "slider",
+              "custom_edit_settings": {
+                "units": "psi"
+              },
+              "uuid": "037fb146-3d15-498b-8e43-afa912e02518",
+              "hide_attribute": false,
+              "attribute_view_widget": "gauge",
+              "attribute_label": "Pressure",
+              "attribute_type": "number",
+              "keep_history": true
+            },
+            {
+              "attribute_label": "Temperature",
+              "attribute_view_widget": "gauge",
+              "readonly_attribute": false,
+              "attribute_name": "temperature",
+              "attribute_edit_widget": "slider",
+              "attribute_type": "number",
+              "hide_attribute": false,
+              "custom_view_settings": {
+                "units": "°F"
+              },
+              "keep_history": true,
+              "uuid": "8d5b48c3-87e4-48e2-9a77-77678cdeeae7",
+              "custom_edit_settings": {
+                "units": "°F"
+              }
+            },
+            {
+              "keep_history": true,
+              "attribute_label": "Wind Speed",
+              "attribute_edit_widget": "slider",
+              "uuid": "8ab4dfea-a866-44e9-bfc2-6522fd79a461",
+              "attribute_name": "wind_speed",
+              "attribute_type": "number",
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {},
+              "hide_attribute": false,
+              "custom_edit_settings": {},
+              "readonly_attribute": false,
+              "calculated_attribute": false
+            },
+            {
+              "custom_edit_settings": {},
+              "attribute_type": "text",
+              "attribute_label": "Wind Direction",
+              "uuid": "4132d185-5404-4460-b525-6d62cf2f92f4",
+              "custom_view_settings": {},
+              "hide_attribute": false,
+              "attribute_edit_widget": "input",
+              "attribute_view_widget": "label",
+              "keep_history": true,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "attribute_name": "wind_direction"
+            },
+            {
+              "attribute_name": "gas_concentration",
+              "attribute_type": "number",
+              "attribute_label": "Gas Concentration",
+              "attribute_edit_widget": "slider",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "e8e654fa-132c-424c-9df5-6d6f5aeabde5"
+            }
+          ],
+          "controls_schema": [],
+          "device_type": "",
+          "parent_child_options": {
+            "propagate_location_to_root": true,
+            "show_location_on_map": true,
+            "store_updates_on_root": false
+          },
+          "default_history_view": "",
+          "hide_attribute_if_undefined": false,
+          "reporting_interval": null,
+          "attributes_reporting_intervals": null,
+          "categories": [
+            {
+              "attributes": [],
+              "controls": [],
+              "id": "__uncategorized__",
+              "label": "Uncategorized",
+              "settings": {
+                "collapsed": false
+              }
+            },
+            {
+              "attributes": [
+                "operator_name",
+                "company_name",
+                "service_date",
+                "calibration_date",
+                "sensor_info",
+                "gas_sensor_type"
+              ],
+              "controls": [],
+              "id": "28e9d0d4-96f7-426d-8a0f-d20500bf0ffa",
+              "label": "Static",
+              "settings": {
+                "collapsed": false
+              }
+            },
+            {
+              "attributes": [
+                "pressure",
+                "temperature",
+                "wind_speed",
+                "wind_direction",
+                "gas_concentration"
+              ],
+              "controls": [],
+              "id": "bdd57aa0-8252-47df-9573-00114269005c",
+              "label": "Dynamic",
+              "settings": {
+                "collapsed": false
+            }
+            }
+          ]
+        },
+        "groupIds": ["default"]
+      }
+    })
+};
+
+  // Fifth asset type - Liquefaction Train
+  const liquefactionTrainOptions = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "ClearBlade-UserToken": ""
+    },
+    body: JSON.stringify({
+      "name": "assetTypes.create",
+      "body": {
+        "item": {
+          "id": "Liquefaction Train",
+          "label": "Liquefaction Train",
+          "description": "",
+          "icon": "",
+          "entity_type": "asset",
+          "schema": [
+            {
+              "attribute_view_widget": "gauge",
+              "keep_history": true,
+              "hide_attribute": false,
+              "uuid": "710fb466-42e3-497c-9489-1edce19bb3af",
+              "attribute_type": "number",
+              "attribute_label": "Natural Gas Feed Temperature",
+              "attribute_edit_widget": "number",
+              "calculated_attribute": false,
+              "readonly_attribute": false,
+              "attribute_name": "Natural Gas Feed Temperature",
+              "custom_view_settings": {
+                "units": "°C",
+                "min": 30,
+                "max": 50
+              },
+              "custom_edit_settings": {}
+            },
+            {
+              "attribute_name": "Liquified Gas Temperature",
+              "attribute_type": "number",
+              "attribute_label": "Liquified Gas Temperature",
+              "attribute_edit_widget": "number",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {
+                "units": "°C",
+                "min": -165,
+                "max": -32
+              },
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "cd2fe48b-3b2a-468f-b7de-cff73255f62f"
+            },
+            {
+              "attribute_name": "Acid Gas Removal Temperature",
+              "attribute_type": "number",
+              "attribute_label": "Acid Gas Removal Temperature",
+              "attribute_edit_widget": "slider",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "115eaf6f-654e-44c0-b653-cac6a08f6d73"
+            },
+            {
+              "attribute_name": "Acid Gas Removal Pressure",
+              "attribute_type": "number",
+              "attribute_label": "Acid Gas Removal Pressure",
+              "attribute_edit_widget": "number",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "label",
+              "custom_view_settings": {
+                "fontSize": 16,
+                "units": "",
+                "trueLabel": "",
+                "falseLabel": ""
+              },
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "e648297a-20cb-46f2-8c63-115e2e6a22a2"
+            },
+            {
+              "attribute_name": "Acid Gas Removal Status",
+              "attribute_type": "text",
+              "attribute_label": "Acid Gas Removal Status",
+              "attribute_edit_widget": "input",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "label",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "e8aea102-fc1c-409a-bbfa-2b719595649d"
+            },
+            {
+              "attribute_name": "Gas Chilling Temperature",
+              "attribute_type": "number",
+              "attribute_label": "Gas Chilling Temperature",
+              "attribute_edit_widget": "number",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "label",
+              "custom_view_settings": {
+                "fontSize": 16,
+                "units": "",
+                "trueLabel": "",
+                "falseLabel": ""
+              },
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "fa3f7e31-4ad0-40a7-85d1-6c5b3db3e436"
+            },
+            {
+              "attribute_name": "Gas Chilling Pressure",
+              "attribute_type": "number",
+              "attribute_label": "Gas Chilling Pressure",
+              "attribute_edit_widget": "slider",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "c3531cdf-b06b-456d-ab96-935878f77b9b"
+            },
+            {
+              "attribute_name": "Gas Chilling Status",
+              "attribute_type": "text",
+              "attribute_label": "Gas Chilling Status",
+              "attribute_edit_widget": "input",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "label",
+              "custom_view_settings": {},
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "b3003650-38e8-4d08-92b5-0de13ae377f2"
+            },
+            {
+              "attribute_name": "Propane Level",
+              "attribute_type": "number",
+              "attribute_label": "Propane Level",
+              "attribute_edit_widget": "number",
+              "custom_edit_settings": {},
+              "attribute_view_widget": "gauge",
+              "custom_view_settings": {
+                "units": "%"
+              },
+              "keep_history": true,
+              "hide_attribute": false,
+              "readonly_attribute": false,
+              "calculated_attribute": false,
+              "uuid": "9ba98f9e-d435-4702-8b4d-ea22adc5aa28"
+            }
+          ],
+          "controls_schema": [],
+          "device_type": "",
+          "parent_child_options": {
+            "propagate_location_to_root": true,
+            "show_location_on_map": true,
+            "store_updates_on_root": false
+          },
+          "default_history_view": "",
+          "hide_attribute_if_undefined": false,
+          "reporting_interval": null,
+          "attributes_reporting_intervals": null,
+          "categories": [
+            {
+              "attributes": [
+                "Natural Gas Feed Temperature",
+                "Liquified Gas Temperature"
+              ],
+              "controls": [],
+              "id": "__uncategorized__",
+              "label": "Uncategorized",
+              "settings": {
+                "collapsed": false
+              }
+            },
+            {
+              "attributes": [
+                "Acid Gas Removal Temperature",
+                "Acid Gas Removal Pressure",
+                "Acid Gas Removal Status"
+              ],
+              "controls": [],
+              "id": "e564213b-5655-4257-8345-dfb296b465fe",
+              "label": "Acid Gas Removal",
+              "settings": {
+                "collapsed": false
+              }
+            },
+            {
+              "attributes": [
+                "Gas Chilling Temperature",
+                "Gas Chilling Pressure",
+                "Gas Chilling Status",
+                "Propane Level"
+              ],
+              "controls": [],
+              "id": "d76d10c7-9be8-4638-9964-aa315277639c",
+              "label": "Gas Chilling",
+              "settings": {
+                "collapsed": false
+              }
+            }
+          ]
+        },
+        "groupIds": ["default"]
+      }
+    })
+  };
+
+  function createSuperUser() {
+    return new Promise(function (resolve, reject) {
+      console.debug("Creating super user");
+      var userId = "";
 
       // Execute createSuperUser service
-      var codeService = ClearBlade.Code();
-      codeService.execute("createSuperUser", {
-        "email": "iacomponentr@clearblade.com",
+      ClearBladeAsync.Code().execute("createSuperUser", {
+        "email": "iacomponent@clearblade.com",
         "first_name": "IA",
         "last_name": "Component",
         "password": "iauserpassword",
         "group_ids": [
           "default"
         ]
-      }, function (err, data) {
-        if (err) {
-          resp.error("Failed to execute createSuperUser service: " + JSON.stringify(err));
-          return;
+      }, true)
+      .then(function(response) {
+        if (!response.success) {
+          reject(new Error("Failed to execute createSuperUser service: " + JSON.stringify(response.results)));
         }
 
-        log("createSuperUser service executed successfully: " + JSON.stringify(data));
+        if (!response.results.user_id) {
+          reject(new Error("Failed to get user_id from createSuperUser response"));
+        }
+        userId = response.results.user_id;
+        console.debug("Updating user");
 
+        // Make PUT request to set service account flag
+        return fetch("https://" + cbmeta.platform_url + "/admin/user/" + req.systemKey + "?user=" + 
+          userId, {
+            "headers": {
+              "accept": "*/*",
+              "clearblade-devtoken": req.userToken,
+              "Content-Type": "application/json",
+            },
+            "body": JSON.stringify({
+              "changes": {
+                "cb_service_account": true
+              },
+              "user": userId
+            }),
+            "method": "PUT",
+            "credentials": "include"
+          });
+      })
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error("Failed to update user: " + response.statusText);
+        }
 
+        if (response.body && Object.keys(response.body).length > 0) {
+          return response.json();
+        }
+        return Promise.resolve();
+      })
+      .then(function(response) {
+        console.info("User updated successfully");
+
+        //Retrieve the newly created user
+        return fetch("https://" + cbmeta.platform_url + "/admin/user/" + req.systemKey + "?user=" + 
+          userId, {
+            "headers": {
+              "accept": "*/*",
+              "clearblade-devtoken": req.userToken,
+              "Content-Type": "application/json",
+            },
+            "body": JSON.stringify({
+              "changes": {
+                "cb_service_account": true
+              },
+              "user": userId
+            }),
+            "method": "GET",
+            "credentials": "include"
+          });
+      })
+      .then(function(response) {
+        if (!response.ok) {
+          throw new Error("Failed to retrieve user: " + response.statusText);
+        }
+
+        return response.json();
+      })
+      .then(function(response) {
+        cargoContainerOptions.headers["ClearBlade-UserToken"] = response.cb_token;
+        lngStorageTankOptions.headers["ClearBlade-UserToken"] = response.cb_token;
+        pipelineMonitorOptions.headers["ClearBlade-UserToken"] = response.cb_token;
+        gasMonitorOptions.headers["ClearBlade-UserToken"] = response.cb_token;
+        liquefactionTrainOptions.headers["ClearBlade-UserToken"] = response.cb_token;
+
+        resolve("Super user created and service account flag set successfully");
+      })
+      .catch(function(error) {
+        reject(new Error("Error creating and updating super user: " + JSON.stringify(error)));
       });
+    });
+  }
 
-      // Create table items for asset types
-      const tableItemsUrl = "https://demo.clearblade.com/api/v/1/code/" + req.systemKey + "/createTableItems?id=assetTypes.create";
+  // Create dashboard row
+  function createDashboard(dashboardData) {
+    return new Promise(function (resolve, reject) {
+      ClearBladeAsync.Collection('dashboards').create(dashboardData)
+      .then(function(data) {
+        resolve(data);
+      })
+      .catch(function(err) {
+        reject(new Error("Error creating dashboard: " + JSON.stringify(err)));
+      });
+    });
+  };
 
-      // First asset type - Cargo Container
-      const cargoContainerOptions = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ClearBlade-UserToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDQ2NDk2NTUsImlhdCI6MTc0NDIxNzY1NSwic2lkIjoiYjlmYWNlMjktN2ZmZS00MzE2LTgyMDgtZDA1MWE3NjJjZGUxIiwic2siOiJjMmQwOGJmZTBjZDBlMGU5ZmJiYmJkZmFiZGQ4MDEiLCJ0dCI6MSwidWlkIjoiODJkMThiZmUwY2VjZjBhMmQzYzNkOWNiYWRlNjAxIiwidXQiOjJ9.5e8OfoR65UVPH4MID4QSUqXXKhTS4B01VylS4tO_jV8"
-        },
-        body: JSON.stringify({
-          "name": "assetTypes.create",
-          "body": {
-            "item": {
-              "id": "CargoContainer",
-              "label": "Cargo Container",
-              "description": "",
-              "icon": "",
-              "entity_type": "asset",
-              "schema": [
-                {
-                  "calculated_attribute": false,
-                  "attribute_type": "text",
-                  "attribute_edit_widget": "input",
-                  "hide_attribute": false,
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "uuid": "8bfd9d11-e0a0-4fa9-939d-edca99e4c4cb",
-                  "attribute_name": "operator_name",
-                  "attribute_label": "Operator Name",
-                  "custom_edit_settings": {}
-                },
-                {
-                  "attribute_edit_widget": "input",
-                  "attribute_view_widget": "label",
-                  "hide_attribute": false,
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "attribute_name": "company_name",
-                  "attribute_type": "text",
-                  "attribute_label": "Company Name",
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {},
-                  "uuid": "3643c46e-2d7b-4175-a45f-1ee7c302b37f"
-                },
-                {
-                  "attribute_type": "dateTime",
-                  "attribute_label": "Service Date",
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "custom_view_settings": {},
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "c426b180-86b2-41a9-a776-1f45517ecc24",
-                  "attribute_name": "service_date",
-                  "attribute_edit_widget": "datePicker",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "datePicker"
-                },
-                {
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "uuid": "f1f3effc-bc15-4ce5-90a9-d9a742ca5fb3",
-                  "attribute_type": "dateTime",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "datePicker",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "attribute_name": "calibration_date",
-                  "attribute_label": "Calibration Date",
-                  "attribute_edit_widget": "datePicker",
-                  "calculated_attribute": false
-                },
-                {
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "datePicker",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "attribute_name": "deliver_by",
-                  "attribute_type": "dateTime",
-                  "attribute_label": "Deliver By",
-                  "attribute_edit_widget": "datePicker",
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "hide_attribute": false,
-                  "uuid": "7fc71e2c-8166-4b48-b3c9-eef236d7afef"
-                },
-                {
-                  "attribute_name": "origin",
-                  "attribute_type": "text",
-                  "attribute_edit_widget": "input",
-                  "attribute_view_widget": "label",
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "attribute_label": "Origin",
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {},
-                  "uuid": "4f62ce46-350e-4b1d-9683-2f5284a20485"
-                },
-                {
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {},
-                  "hide_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "4b5c86df-6d6e-4519-aefd-665a39896553",
-                  "attribute_name": "destination",
-                  "attribute_label": "Destination",
-                  "attribute_edit_widget": "input",
-                  "readonly_attribute": false,
-                  "attribute_type": "text",
-                  "custom_edit_settings": {},
-                  "keep_history": true
-                },
-                {
-                  "attribute_name": "tank_temperature",
-                  "attribute_type": "number",
-                  "attribute_label": "Tank Temperature",
-                  "attribute_edit_widget": "number",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {
-                    "units": "°C",
-                    "min": -180,
-                    "max": -140,
-                    "darkModeColor": {
-                      "colorType": "theme",
-                      "value": "externalLink",
-                      "isDarkMode": true
-                    },
-                    "lightModeColor": {
-                      "colorType": "theme",
-                      "value": "externalLink",
-                      "isDarkMode": false
-                    },
-                    "gaugeBreakpoints": []
-                  },
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "a4bc6ae5-14e7-4a6c-a59f-a449458e45e7"
-                },
-                {
-                  "attribute_edit_widget": "slider",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "gauge",
-                  "hide_attribute": false,
-                  "uuid": "d5bc9965-69c9-4c04-b615-d816f57fda5e",
-                  "attribute_name": "pressure",
-                  "attribute_label": "Pressure",
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "attribute_type": "number",
-                  "custom_view_settings": {
-                    "units": "psig",
-                    "min": 50,
-                    "max": 120
-                  }
-                },
-                {
-                  "attribute_type": "number",
-                  "attribute_label": "Volume",
-                  "attribute_edit_widget": "number",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "label",
-                  "hide_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "0298039b-f8bd-4980-aa45-a4d28fd2ec12",
-                  "attribute_name": "volume",
-                  "custom_view_settings": {
-                    "fontSize": 16,
-                    "units": "m^3",
-                    "trueLabel": "",
-                    "falseLabel": ""
-                  },
-                  "keep_history": true,
-                  "readonly_attribute": false
-                },
-                {
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "dafb47cf-9147-403e-95f3-4289a30ecc8a",
-                  "attribute_name": "weight",
-                  "attribute_type": "number",
-                  "attribute_label": "Weight",
-                  "attribute_edit_widget": "slider",
-                  "custom_edit_settings": {},
-                  "readonly_attribute": false
-                },
-                {
-                  "attribute_type": "boolean",
-                  "attribute_view_widget": "toggle",
-                  "custom_view_settings": {},
-                  "uuid": "edb14d28-6530-4b32-b6d6-51f999225231",
-                  "calculated_attribute": false,
-                  "attribute_name": "perishable",
-                  "attribute_label": "Perishable",
-                  "attribute_edit_widget": "toggle",
-                  "custom_edit_settings": {},
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false
-                },
-                {
-                  "calculated_attribute": false,
-                  "attribute_name": "status",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "uuid": "9cd09f9f-4539-49e9-af53-ba204c4d3fee",
-                  "attribute_type": "text",
-                  "attribute_label": "Status",
-                  "attribute_edit_widget": "input"
-                },
-                {
-                  "keep_history": true,
-                  "calculated_attribute": false,
-                  "attribute_label": "Time on Location",
-                  "attribute_type": "number",
-                  "attribute_edit_widget": "slider",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {
-                    "trueLabel": "",
-                    "falseLabel": "",
-                    "fontSize": 16,
-                    "units": ""
-                  },
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "attribute_name": "time_on_location",
-                  "uuid": "d3b369b8-dd8d-430a-aa8c-a38fb09847d5"
-                }
-              ],
-              "controls_schema": [],
-              "device_type": "",
-              "parent_child_options": {
-                "propagate_location_to_root": true,
-                "show_location_on_map": true,
-                "store_updates_on_root": false
-              },
-              "icon_svg": {
-                "iconKey": "DirectionsBoat",
-                "type": "mui"
-              },
-              "default_history_view": "",
-              "hide_attribute_if_undefined": false,
-              "reporting_interval": null,
-              "attributes_reporting_intervals": null,
-              "categories": [
-                {
-                  "attributes": [],
-                  "controls": [],
-                  "id": "__uncategorized__",
-                  "label": "Uncategorized",
-                  "settings": {
-                    "collapsed": false
-                  }
-                }
-              ]
-            },
-            "groupIds": [
-              "default"
-            ]
-          }
-        })
-      };
+  function createDashboardGroups() {
+    return new Promise(function (resolve, reject) {
+      ClearBladeAsync.Collection('dashboards_groups').create(dashboardsGroupsData)
+      .then(function(data) {
+        resolve(data);
+      })
+      .catch(function(err) {
+        reject(new Error("Failed to create dashboards_groups entry: " + JSON.stringify(err)));
+      });
+    });
+  }
 
-      // Second asset type - LNG Storage Tank
-      const lngStorageTankOptions = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ClearBlade-UserToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDQ2NDk2NTUsImlhdCI6MTc0NDIxNzY1NSwic2lkIjoiYjlmYWNlMjktN2ZmZS00MzE2LTgyMDgtZDA1MWE3NjJjZGUxIiwic2siOiJjMmQwOGJmZTBjZDBlMGU5ZmJiYmJkZmFiZGQ4MDEiLCJ0dCI6MSwidWlkIjoiODJkMThiZmUwY2VjZjBhMmQzYzNkOWNiYWRlNjAxIiwidXQiOjJ9.5e8OfoR65UVPH4MID4QSUqXXKhTS4B01VylS4tO_jV8"
-        },
-        body: JSON.stringify({
-          "name": "assetTypes.create",
-          "body": {
-            "item": {
-              "id": "LNG Storage Tank",
-              "label": "LNG Storage Tank",
-              "description": "",
-              "icon": "",
-              "entity_type": "asset",
-              "schema": [
-                {
-                  "attribute_name": "Filled Volume",
-                  "attribute_type": "number",
-                  "attribute_label": "Filled Volume",
-                  "attribute_edit_widget": "number",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {
-                    "units": "cubic meters",
-                    "max": 160000
-                  },
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "986ea161-5f4b-4e38-8191-c273f5cb297c"
-                },
-                {
-                  "attribute_name": "Temperature",
-                  "attribute_type": "number",
-                  "attribute_label": "Temperature",
-                  "attribute_edit_widget": "number",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {
-                    "min": -140,
-                    "max": -180,
-                    "units": "°C"
-                  },
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "d5f13ddb-2041-46f7-8d80-b2be1faf3842"
-                },
-                {
-                  "attribute_name": "Pressure",
-                  "attribute_type": "number",
-                  "attribute_label": "Pressure",
-                  "attribute_edit_widget": "number",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {
-                    "min": 50,
-                    "max": 120,
-                    "units": "psig"
-                  },
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "23fdbc3d-9ae7-4ad8-9076-d037405e3b9c"
-                }
-              ],
-              "controls_schema": [],
-              "device_type": "",
-              "parent_child_options": {
-                "propagate_location_to_root": true,
-                "show_location_on_map": true,
-                "store_updates_on_root": false
-              },
-              "icon_svg": {
-                "svg": '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" x="0px" y="0px" viewBox="0 0 100 125" enable-background="new 0 0 100 100" xml:space="preserve"><path d="M93.981,37.601c0-1.146-1.104-2.057-6.493-2.785c-3.7-0.5-8.611-0.775-13.829-0.775c-3.087,0-6.044,0.103-8.729,0.286  v-0.224v-0.754l-0.74-0.132c-0.167-0.03-0.334-0.055-0.5-0.083c1.01-0.575,1.246-1.153,1.246-1.692c0-1.195-1.089-2.564-9.158-3.654  c-5.419-0.732-12.616-1.135-20.264-1.135c-7.648,0-14.845,0.403-20.264,1.135c-8.069,1.09-9.157,2.458-9.157,3.654  c0,0.534,0.227,1.107,1.22,1.68c-0.187,0.035-0.374,0.063-0.56,0.099l-0.734,0.139v0.744c0,3.271,0.027,7.174,0.054,11.029  c0.049,7.062,0.096,13.944-0.051,21.36v0.046c0.069,2.125,3.545,3.896,9.119,5.055c5.23,1.088,12.421,1.756,20.336,1.756  c7.928,0,15.133-0.657,20.365-1.736c5.556-1.146,9.02-2.901,9.089-5.023v-0.027v-0.879c2.631,0.273,5.571,0.436,8.702,0.436  c5.396,0,10.298-0.447,13.859-1.182c3.78-0.779,6.138-1.974,6.185-3.418v-0.019V39.411v-0.512l-0.39-0.07  C93.807,38.453,93.981,38.045,93.981,37.601z M91.611,37.588c-0.423,0.163-1.137,0.376-2.313,0.601  c-0.85-0.123-1.699-0.237-2.55-0.341v-1.231C89.094,36.909,90.757,37.257,91.611,37.588z M78.381,37.133v-1.129  c2.456,0.083,4.625,0.226,6.482,0.406v1.224C82.703,37.405,80.542,37.234,78.381,37.133z M83.464,59.881l-3.218,0.566v-3.008  l3.218-0.567V59.881z M83.464,54.959l-3.218,0.567v-2.974l3.218-0.566V54.959z M83.464,50.073l-3.218,0.567v-3.082l3.218-0.568  V50.073z M83.464,45.078l-3.218,0.567v-2.97l3.218-0.568V45.078z M80.246,62.361l3.218-0.567v2.546  c-1.016,0.123-2.091,0.228-3.218,0.312V62.361z M83.464,40.194l-3.218,0.567v-2.299c1.072,0.069,2.145,0.155,3.218,0.256V40.194z   M76.496,35.954v1.109c-0.954-0.028-1.907-0.047-2.862-0.05c-1.207-0.003-2.413,0.021-3.62,0.059v-1.097  c1.164-0.029,2.366-0.051,3.646-0.051C74.641,35.925,75.581,35.937,76.496,35.954z M68.129,36.036v1.113  c-1.066,0.054-2.133,0.124-3.198,0.21v-1.147C65.934,36.141,66.993,36.082,68.129,36.036z M62.899,31.428  c-0.322,0.215-1.148,0.615-3.134,1.063c-1.819-0.278-3.639-0.525-5.46-0.742v-2.245C59.048,30.074,62.04,30.802,62.899,31.428z   M50.364,64.553l-5.613,0.99v-5.318l5.613-0.99V64.553z M50.364,57.321l-5.613,0.989v-5.267l5.613-0.99V57.321z M50.364,50.141  l-5.613,0.99v-5.428l5.613-0.989V50.141z M50.364,42.8l-5.613,0.99v-5.264l5.613-0.99V42.8z M44.751,67.456l5.613-0.99v4.214  c-1.753,0.224-3.63,0.407-5.613,0.547V67.456z M50.364,35.623l-5.613,0.99v-3.932c1.87,0.117,3.741,0.266,5.613,0.447V35.623z   M42.009,30.738V28.64c3.971,0.126,7.472,0.359,10.412,0.657v2.238C48.952,31.159,45.482,30.891,42.009,30.738z M40.125,28.59v2.078  c-1.55-0.049-3.099-0.085-4.649-0.09c-1.921-0.005-3.842,0.035-5.763,0.101v-2.062c1.838-0.051,3.77-0.081,5.801-0.081  C37.115,28.536,38.643,28.557,40.125,28.59z M17.417,31.593v-2.166c2.895-0.326,6.385-0.593,10.412-0.747v2.07  C24.358,30.913,20.887,31.189,17.417,31.593z M8.129,31.428c0.785-0.572,3.36-1.227,7.404-1.77v2.175  c-1.466,0.189-2.932,0.397-4.398,0.63C9.242,32.026,8.446,31.638,8.129,31.428z M15.506,69.835  c-4.708-0.979-7.638-2.167-7.692-3.344c0.147-7.414,0.099-14.3,0.05-21.367C7.842,41.98,7.82,38.796,7.817,34.847  c9.224-1.702,18.444-2.503,27.659-2.477c2.462,0.007,4.926,0.077,7.39,0.202v38.773c-2.358,0.129-4.828,0.204-7.39,0.204  C27.669,71.549,20.61,70.896,15.506,69.835z M63.138,66.533c-0.038,1.174-2.956,2.353-7.654,3.321  c-0.999,0.206-2.094,0.391-3.234,0.563V33.319c3.629,0.395,7.258,0.906,10.89,1.538L63.138,66.533z M64.931,64.451V38.583  c2.902-0.238,5.803-0.358,8.703-0.35c1.575,0.004,3.151,0.044,4.728,0.119v26.418c-1.515,0.076-3.093,0.123-4.729,0.123  C70.487,64.894,67.547,64.729,64.931,64.451z M92.458,61.48c-0.026,0.799-2.013,1.602-5.21,2.26  c-0.591,0.122-1.234,0.232-1.899,0.338V38.91c2.368,0.264,4.738,0.603,7.109,1.016V61.48z"/><text x="0" y="115" fill="#000000" font-size="5px" font-weight="bold" font-family="\'Helvetica Neue\', Helvetica, Arial-Unicode, Arial, Sans-serif">Created by Nikita Kozin</text><text x="0" y="120" fill="#000000" font-size="5px" font-weight="bold" font-family="\'Helvetica Neue\', Helvetica, Arial-Unicode, Arial, Sans-serif">from the Noun Project</text></svg>',
-                "type": "svg"
-              },
-              "default_history_view": "",
-              "hide_attribute_if_undefined": false,
-              "reporting_interval": null,
-              "attributes_reporting_intervals": null,
-              "categories": [
-                {
-                  "attributes": [],
-                  "controls": [],
-                  "id": "__uncategorized__",
-                  "label": "Uncategorized",
-                  "settings": {
-                    "collapsed": false
-                  }
-                }
-              ]
-            },
-            "groupIds": [
-              "default"
-            ]
-          }
-        })
-      };
+  createSuperUser()
+  .then(function (data) {
+    console.debug(JSON.stringify(data));
 
-      // Third asset type - Pipeline Monitor
-      const pipelineMonitorOptions = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ClearBlade-UserToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDQ2NDk2NTUsImlhdCI6MTc0NDIxNzY1NSwic2lkIjoiYjlmYWNlMjktN2ZmZS00MzE2LTgyMDgtZDA1MWE3NjJjZGUxIiwic2siOiJjMmQwOGJmZTBjZDBlMGU5ZmJiYmJkZmFiZGQ4MDEiLCJ0dCI6MSwidWlkIjoiODJkMThiZmUwY2VjZjBhMmQzYzNkOWNiYWRlNjAxIiwidXQiOjJ9.5e8OfoR65UVPH4MID4QSUqXXKhTS4B01VylS4tO_jV8"
-        },
-        body: JSON.stringify({
-          "name": "assetTypes.create",
-          "body": {
-            "item": {
-              "id": "Pipeline Monitor",
-              "label": "Pipeline Monitor",
-              "description": "",
-              "icon": "",
-              "entity_type": "asset",
-              "schema": [
-                {
-                  "attribute_edit_widget": "input",
-                  "attribute_label": "Operator Name",
-                  "attribute_name": "operator_name",
-                  "attribute_type": "text",
-                  "attribute_view_widget": "label",
-                  "calculated_attribute": false,
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {},
-                  "hide_attribute": false,
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "uuid": "5240f703-7875-4c70-90db-340210cac17f"
-                },
-                {
-                  "attribute_edit_widget": "input",
-                  "attribute_label": "Company Name",
-                  "attribute_name": "company_name",
-                  "attribute_type": "text",
-                  "attribute_view_widget": "label",
-                  "calculated_attribute": false,
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {},
-                  "hide_attribute": false,
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "uuid": "e461c630-129f-496a-881e-9d721d6c5158"
-                },
-                {
-                  "attribute_edit_widget": "input",
-                  "attribute_label": "Pipeline Name",
-                  "attribute_name": "pipeline_name",
-                  "attribute_type": "text",
-                  "attribute_view_widget": "label",
-                  "calculated_attribute": false,
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {},
-                  "hide_attribute": false,
-                  "keep_history": false,
-                  "readonly_attribute": false,
-                  "uuid": "621e7c81-27ae-48b8-918f-1877039fdb96"
-                },
-                {
-                  "attribute_edit_widget": "datePicker",
-                  "attribute_label": "Service Date",
-                  "attribute_name": "service_date",
-                  "attribute_type": "dateTime",
-                  "attribute_view_widget": "datePicker",
-                  "calculated_attribute": false,
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {},
-                  "hide_attribute": false,
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "uuid": "ed9ecbf3-39c3-417c-b556-602dbdb05279"
-                },
-                {
-                  "attribute_edit_widget": "datePicker",
-                  "attribute_label": "Calibration Date",
-                  "attribute_name": "calibration_date",
-                  "attribute_type": "dateTime",
-                  "attribute_view_widget": "datePicker",
-                  "calculated_attribute": false,
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {},
-                  "hide_attribute": false,
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "uuid": "91aeada3-1c04-4aa6-9e0d-b287c3ce2063"
-                },
-                {
-                  "attribute_edit_widget": "number",
-                  "attribute_label": "Pressure",
-                  "attribute_name": "pressure",
-                  "attribute_type": "number",
-                  "attribute_view_widget": "gauge",
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {
-                    "max": 2000,
-                    "units": "psi"
-                  },
-                  "hide_attribute": false,
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "uuid": "037fb146-3d15-498b-8e43-afa912e02518"
-                },
-                {
-                  "attribute_edit_widget": "slider",
-                  "attribute_label": "Flow rate",
-                  "attribute_name": "flow_rate",
-                  "attribute_type": "number",
-                  "attribute_view_widget": "gauge",
-                  "custom_edit_settings": {
-                    "units": "m/s"
-                  },
-                  "custom_view_settings": {
-                    "darkModeColor": {
-                      "colorType": "custom",
-                      "isDarkMode": true,
-                      "value": ""
-                    },
-                    "gaugeBreakpoints": [
-                      {
-                        "breakpointValue": 0,
-                        "darkModeColor": {
-                          "colorType": "custom",
-                          "isDarkMode": true,
-                          "value": ""
-                        },
-                        "lightModeColor": {
-                          "colorType": "custom",
-                          "isDarkMode": false,
-                          "value": ""
-                        },
-                        "uuid": ""
-                      }
-                    ],
-                    "lightModeColor": {
-                      "colorType": "custom",
-                      "isDarkMode": false,
-                      "value": ""
-                    },
-                    "max": 100,
-                    "min": 0,
-                    "units": "m/s"
-                  },
-                  "hide_attribute": false,
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "uuid": "3cd562ca-cdda-4003-abd1-a843e5f6951a"
-                },
-                {
-                  "attribute_edit_widget": "slider",
-                  "attribute_label": "Temperature",
-                  "attribute_name": "temperature",
-                  "attribute_type": "number",
-                  "attribute_view_widget": "gauge",
-                  "custom_edit_settings": {
-                    "units": "°C"
-                  },
-                  "custom_view_settings": {
-                    "units": "°C"
-                  },
-                  "hide_attribute": false,
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "uuid": "8d5b48c3-87e4-48e2-9a77-77678cdeeae7"
-                },
-                {
-                  "attribute_edit_widget": "toggle",
-                  "attribute_label": "Valve status",
-                  "attribute_name": "valve_status",
-                  "attribute_type": "boolean",
-                  "attribute_view_widget": "toggle",
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {},
-                  "hide_attribute": false,
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "uuid": "eba30144-3ab2-4626-b441-745648a5128d"
-                },
-                {
-                  "attribute_edit_widget": "slider",
-                  "attribute_label": "Total Flow",
-                  "attribute_name": "total_flow",
-                  "attribute_type": "number",
-                  "attribute_view_widget": "gauge",
-                  "calculated_attribute": false,
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {},
-                  "hide_attribute": false,
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "uuid": "3d4c0bbd-e3f7-414f-93c2-83b50e623873"
-                }
-              ],
-              "controls_schema": [],
-              "device_type": "",
-              "parent_child_options": {
-                "propagate_location_to_root": true,
-                "show_location_on_map": true,
-                "store_updates_on_root": false
-              },
-              "default_history_view": "",
-              "hide_attribute_if_undefined": false,
-              "reporting_interval": null,
-              "attributes_reporting_intervals": null,
-              "categories": [
-                {
-                  "attributes": [],
-                  "controls": [],
-                  "id": "__uncategorized__",
-                  "label": "Uncategorized",
-                  "settings": {
-                    "collapsed": false
-                  }
-                },
-                {
-                  "attributes": [
-                    "operator_name",
-                    "company_name",
-                    "pipeline_name",
-                    "service_date",
-                    "calibration_date"
-                  ],
-                  "controls": [],
-                  "id": "28e9d0d4-96f7-426d-8a0f-d20500bf0ffa",
-                  "label": "Static",
-                  "settings": {
-                    "collapsed": false
-                  }
-                },
-                {
-                  "attributes": [
-                    "pressure",
-                    "flow_rate",
-                    "temperature",
-                    "valve_status",
-                    "total_flow"
-                  ],
-                  "controls": [],
-                  "id": "bdd57aa0-8252-47df-9573-00114269005c",
-                  "label": "Dynamic",
-                  "settings": {
-                    "collapsed": false
-                  }
-                }
-              ]
-            },
-            "groupIds": [
-              "default"
-            ]
-          }
-        })
-      };
+    return createDashboard(dashboardData);
+  })
+  .then(function (data) {
+    console.debug("Dashboard created successfully: " + JSON.stringify(data));
 
-      // Fourth asset type - Gas Monitor
-      const gasMonitorOptions = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ClearBlade-UserToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDQ2NDk2NTUsImlhdCI6MTc0NDIxNzY1NSwic2lkIjoiYjlmYWNlMjktN2ZmZS00MzE2LTgyMDgtZDA1MWE3NjJjZGUxIiwic2siOiJjMmQwOGJmZTBjZDBlMGU5ZmJiYmJkZmFiZGQ4MDEiLCJ0dCI6MSwidWlkIjoiODJkMThiZmUwY2VjZjBhMmQzYzNkOWNiYWRlNjAxIiwidXQiOjJ9.5e8OfoR65UVPH4MID4QSUqXXKhTS4B01VylS4tO_jV8"
-        },
-        body: JSON.stringify({
-          "name": "assetTypes.create",
-          "body": {
-            "item": {
-              "id": "GasMonitor",
-              "label": "Gas Monitor",
-              "description": "",
-              "icon": "",
-              "entity_type": "asset",
-              "schema": [
-                {
-                  "readonly_attribute": false,
-                  "uuid": "5240f703-7875-4c70-90db-340210cac17f",
-                  "hide_attribute": false,
-                  "attribute_view_widget": "label",
-                  "calculated_attribute": false,
-                  "attribute_type": "text",
-                  "keep_history": true,
-                  "attribute_name": "operator_name",
-                  "attribute_label": "Operator Name",
-                  "custom_view_settings": {},
-                  "attribute_edit_widget": "input",
-                  "custom_edit_settings": {}
-                },
-                {
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "attribute_name": "company_name",
-                  "custom_edit_settings": {},
-                  "hide_attribute": false,
-                  "uuid": "e461c630-129f-496a-881e-9d721d6c5158",
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {},
-                  "attribute_edit_widget": "input",
-                  "keep_history": true,
-                  "attribute_label": "Company Name",
-                  "attribute_type": "text"
-                },
-                {
-                  "attribute_type": "dateTime",
-                  "attribute_edit_widget": "datePicker",
-                  "uuid": "ed9ecbf3-39c3-417c-b556-602dbdb05279",
-                  "readonly_attribute": false,
-                  "hide_attribute": false,
-                  "attribute_label": "Service Date",
-                  "attribute_view_widget": "datePicker",
-                  "attribute_name": "service_date",
-                  "calculated_attribute": false,
-                  "custom_edit_settings": {},
-                  "custom_view_settings": {},
-                  "keep_history": true
-                },
-                {
-                  "attribute_view_widget": "datePicker",
-                  "readonly_attribute": false,
-                  "attribute_type": "dateTime",
-                  "attribute_name": "calibration_date",
-                  "attribute_label": "Calibration Date",
-                  "calculated_attribute": false,
-                  "custom_view_settings": {},
-                  "uuid": "91aeada3-1c04-4aa6-9e0d-b287c3ce2063",
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "custom_edit_settings": {},
-                  "attribute_edit_widget": "datePicker"
-                },
-                {
-                  "attribute_name": "sensor_info",
-                  "attribute_type": "text",
-                  "attribute_label": "Sensor Info",
-                  "attribute_edit_widget": "input",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {},
-                  "keep_history": false,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "196c1f52-6d81-4d16-b28e-3d7c6738586b"
-                },
-                {
-                  "attribute_name": "gas_sensor_type",
-                  "attribute_type": "text",
-                  "attribute_label": "Gas Sensor Type",
-                  "attribute_edit_widget": "input",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "896106dc-d5ff-43a7-b369-3fa288399d06"
-                },
-                {
-                  "custom_view_settings": {
-                    "units": "psi"
-                  },
-                  "readonly_attribute": false,
-                  "attribute_name": "pressure",
-                  "attribute_edit_widget": "slider",
-                  "custom_edit_settings": {
-                    "units": "psi"
-                  },
-                  "uuid": "037fb146-3d15-498b-8e43-afa912e02518",
-                  "hide_attribute": false,
-                  "attribute_view_widget": "gauge",
-                  "attribute_label": "Pressure",
-                  "attribute_type": "number",
-                  "keep_history": true
-                },
-                {
-                  "attribute_label": "Temperature",
-                  "attribute_view_widget": "gauge",
-                  "readonly_attribute": false,
-                  "attribute_name": "temperature",
-                  "attribute_edit_widget": "slider",
-                  "attribute_type": "number",
-                  "hide_attribute": false,
-                  "custom_view_settings": {
-                    "units": "°F"
-                  },
-                  "keep_history": true,
-                  "uuid": "8d5b48c3-87e4-48e2-9a77-77678cdeeae7",
-                  "custom_edit_settings": {
-                    "units": "°F"
-                  }
-                },
-                {
-                  "keep_history": true,
-                  "attribute_label": "Wind Speed",
-                  "attribute_edit_widget": "slider",
-                  "uuid": "8ab4dfea-a866-44e9-bfc2-6522fd79a461",
-                  "attribute_name": "wind_speed",
-                  "attribute_type": "number",
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {},
-                  "hide_attribute": false,
-                  "custom_edit_settings": {},
-                  "readonly_attribute": false,
-                  "calculated_attribute": false
-                },
-                {
-                  "custom_edit_settings": {},
-                  "attribute_type": "text",
-                  "attribute_label": "Wind Direction",
-                  "uuid": "4132d185-5404-4460-b525-6d62cf2f92f4",
-                  "custom_view_settings": {},
-                  "hide_attribute": false,
-                  "attribute_edit_widget": "input",
-                  "attribute_view_widget": "label",
-                  "keep_history": true,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "attribute_name": "wind_direction"
-                },
-                {
-                  "attribute_name": "gas_concentration",
-                  "attribute_type": "number",
-                  "attribute_label": "Gas Concentration",
-                  "attribute_edit_widget": "slider",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "e8e654fa-132c-424c-9df5-6d6f5aeabde5"
-                }
-              ],
-              "controls_schema": [],
-              "device_type": "",
-              "parent_child_options": {
-                "propagate_location_to_root": true,
-                "show_location_on_map": true,
-                "store_updates_on_root": false
-              },
-              "default_history_view": "",
-              "hide_attribute_if_undefined": false,
-              "reporting_interval": null,
-              "attributes_reporting_intervals": null,
-              "categories": [
-                {
-                  "attributes": [],
-                  "controls": [],
-                  "id": "__uncategorized__",
-                  "label": "Uncategorized",
-                  "settings": {
-                    "collapsed": false
-                  }
-                },
-                {
-                  "attributes": [
-                    "operator_name",
-                    "company_name",
-                    "service_date",
-                    "calibration_date",
-                    "sensor_info",
-                    "gas_sensor_type"
-                  ],
-                  "controls": [],
-                  "id": "28e9d0d4-96f7-426d-8a0f-d20500bf0ffa",
-                  "label": "Static",
-                  "settings": {
-                    "collapsed": false
-                  }
-                },
-                {
-                  "attributes": [
-                    "pressure",
-                    "temperature",
-                    "wind_speed",
-                    "wind_direction",
-                    "gas_concentration"
-                  ],
-                  "controls": [],
-                  "id": "bdd57aa0-8252-47df-9573-00114269005c",
-                  "label": "Dynamic",
-                  "settings": {
-                    "collapsed": false
-                  }
-                }
-              ]
-            },
-            "groupIds": [
-              "default"
-            ]
-          }
-        })
-      };
+    // Create entry in dashboards_groups collection
+    return createDashboardGroups();
+  })
+  .then(function (data) {
+    console.debug("Dashboards groups entry created successfully: " + JSON.stringify(data));
 
-      // Fifth asset type - Liquefaction Train
-      const liquefactionTrainOptions = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "ClearBlade-UserToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDQ2NDk2NTUsImlhdCI6MTc0NDIxNzY1NSwic2lkIjoiYjlmYWNlMjktN2ZmZS00MzE2LTgyMDgtZDA1MWE3NjJjZGUxIiwic2siOiJjMmQwOGJmZTBjZDBlMGU5ZmJiYmJkZmFiZGQ4MDEiLCJ0dCI6MSwidWlkIjoiODJkMThiZmUwY2VjZjBhMmQzYzNkOWNiYWRlNjAxIiwidXQiOjJ9.5e8OfoR65UVPH4MID4QSUqXXKhTS4B01VylS4tO_jV8"
-        },
-        body: JSON.stringify({
-          "name": "assetTypes.create",
-          "body": {
-            "item": {
-              "id": "Liquefaction Train",
-              "label": "Liquefaction Train",
-              "description": "",
-              "icon": "",
-              "entity_type": "asset",
-              "schema": [
-                {
-                  "attribute_view_widget": "gauge",
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "uuid": "710fb466-42e3-497c-9489-1edce19bb3af",
-                  "attribute_type": "number",
-                  "attribute_label": "Natural Gas Feed Temperature",
-                  "attribute_edit_widget": "number",
-                  "calculated_attribute": false,
-                  "readonly_attribute": false,
-                  "attribute_name": "Natural Gas Feed Temperature",
-                  "custom_view_settings": {
-                    "units": "°C",
-                    "min": 30,
-                    "max": 50
-                  },
-                  "custom_edit_settings": {}
-                },
-                {
-                  "attribute_name": "Liquified Gas Temperature",
-                  "attribute_type": "number",
-                  "attribute_label": "Liquified Gas Temperature",
-                  "attribute_edit_widget": "number",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {
-                    "units": "°C",
-                    "min": -165,
-                    "max": -32
-                  },
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "cd2fe48b-3b2a-468f-b7de-cff73255f62f"
-                },
-                {
-                  "attribute_name": "Acid Gas Removal Temperature",
-                  "attribute_type": "number",
-                  "attribute_label": "Acid Gas Removal Temperature",
-                  "attribute_edit_widget": "slider",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "115eaf6f-654e-44c0-b653-cac6a08f6d73"
-                },
-                {
-                  "attribute_name": "Acid Gas Removal Pressure",
-                  "attribute_type": "number",
-                  "attribute_label": "Acid Gas Removal Pressure",
-                  "attribute_edit_widget": "number",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {
-                    "fontSize": 16,
-                    "units": "",
-                    "trueLabel": "",
-                    "falseLabel": ""
-                  },
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "e648297a-20cb-46f2-8c63-115e2e6a22a2"
-                },
-                {
-                  "attribute_name": "Acid Gas Removal Status",
-                  "attribute_type": "text",
-                  "attribute_label": "Acid Gas Removal Status",
-                  "attribute_edit_widget": "input",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "e8aea102-fc1c-409a-bbfa-2b719595649d"
-                },
-                {
-                  "attribute_name": "Gas Chilling Temperature",
-                  "attribute_type": "number",
-                  "attribute_label": "Gas Chilling Temperature",
-                  "attribute_edit_widget": "number",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {
-                    "fontSize": 16,
-                    "units": "",
-                    "trueLabel": "",
-                    "falseLabel": ""
-                  },
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "fa3f7e31-4ad0-40a7-85d1-6c5b3db3e436"
-                },
-                {
-                  "attribute_name": "Gas Chilling Pressure",
-                  "attribute_type": "number",
-                  "attribute_label": "Gas Chilling Pressure",
-                  "attribute_edit_widget": "slider",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "c3531cdf-b06b-456d-ab96-935878f77b9b"
-                },
-                {
-                  "attribute_name": "Gas Chilling Status",
-                  "attribute_type": "text",
-                  "attribute_label": "Gas Chilling Status",
-                  "attribute_edit_widget": "input",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "label",
-                  "custom_view_settings": {},
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "b3003650-38e8-4d08-92b5-0de13ae377f2"
-                },
-                {
-                  "attribute_name": "Propane Level",
-                  "attribute_type": "number",
-                  "attribute_label": "Propane Level",
-                  "attribute_edit_widget": "number",
-                  "custom_edit_settings": {},
-                  "attribute_view_widget": "gauge",
-                  "custom_view_settings": {
-                    "units": "%"
-                  },
-                  "keep_history": true,
-                  "hide_attribute": false,
-                  "readonly_attribute": false,
-                  "calculated_attribute": false,
-                  "uuid": "9ba98f9e-d435-4702-8b4d-ea22adc5aa28"
-                }
-              ],
-              "controls_schema": [],
-              "device_type": "",
-              "parent_child_options": {
-                "propagate_location_to_root": true,
-                "show_location_on_map": true,
-                "store_updates_on_root": false
-              },
-              "default_history_view": "",
-              "hide_attribute_if_undefined": false,
-              "reporting_interval": null,
-              "attributes_reporting_intervals": null,
-              "categories": [
-                {
-                  "attributes": [
-                    "Natural Gas Feed Temperature",
-                    "Liquified Gas Temperature"
-                  ],
-                  "controls": [],
-                  "id": "__uncategorized__",
-                  "label": "Uncategorized",
-                  "settings": {
-                    "collapsed": false
-                  }
-                },
-                {
-                  "attributes": [
-                    "Acid Gas Removal Temperature",
-                    "Acid Gas Removal Pressure",
-                    "Acid Gas Removal Status"
-                  ],
-                  "controls": [],
-                  "id": "e564213b-5655-4257-8345-dfb296b465fe",
-                  "label": "Acid Gas Removal",
-                  "settings": {
-                    "collapsed": false
-                  }
-                },
-                {
-                  "attributes": [
-                    "Gas Chilling Temperature",
-                    "Gas Chilling Pressure",
-                    "Gas Chilling Status",
-                    "Propane Level"
-                  ],
-                  "controls": [],
-                  "id": "d76d10c7-9be8-4638-9964-aa315277639c",
-                  "label": "Gas Chilling",
-                  "settings": {
-                    "collapsed": false
-                  }
-                }
-              ]
-            },
-            "groupIds": [
-              "default"
-            ]
-          }
-        })
-      };
+    // First create Cargo Container
+    return fetch(tableItemsUrl, cargoContainerOptions);
+  })
+  .then(function (response) {
+    if (!response.ok) {
+      throw new Error("Failed to create Cargo Container asset type: " + response.statusText);
+    } else {
+      return response.json();
+    }
+  })
+  .then(function (responseData) {
+    console.debug("Cargo Container asset type created successfully");
 
-      log(tableItemsUrl);
+    // Then create LNG Storage Tank
+    return fetch(tableItemsUrl, lngStorageTankOptions);
+  })
+  .then(function (response) {
+    if (!response.ok) {
+      throw new Error("Failed to create LNG Storage Tank asset type: " + response.statusText);
+    } else {
+      return response.json();
+    }
+  })
+  .then(function (responseData) {
+    console.debug("LNG Storage Tank asset type created successfully");
 
-      // First create Cargo Container
-      fetch(tableItemsUrl, cargoContainerOptions)
-        .then(function (response) {
-          if (!response.ok) {
-            throw new Error("Failed to create Cargo Container asset type: " + response.statusText);
-          }
-          return response.json();
-        })
-        .then(function (responseData) {
-          log("Cargo Container asset type created successfully: " + JSON.stringify(responseData));
 
-          // Then create LNG Storage Tank
-          return fetch(tableItemsUrl, lngStorageTankOptions);
-        })
-        .then(function (response) {
-          if (!response.ok) {
-            throw new Error("Failed to create LNG Storage Tank asset type: " + response.statusText);
-          }
-          return response.json();
-        })
-        .then(function (responseData) {
-          log("LNG Storage Tank asset type created successfully: " + JSON.stringify(responseData));
+    // Then create Pipeline Monitor
+     return fetch(tableItemsUrl, pipelineMonitorOptions);
+  })
+  .then(function (response) {
+    if (!response.ok) {
+      throw new Error("Failed to create Pipeline Monitor asset type: " + response.statusText);
+    } else {
+      return response.json();
+    }
+  })
+  .then(function (responseData) {
+    console.debug("Pipeline Monitor asset type created successfully");
 
-          // Then create Pipeline Monitor
-          return fetch(tableItemsUrl, pipelineMonitorOptions);
-        })
-        .then(function (response) {
-          if (!response.ok) {
-            throw new Error("Failed to create Pipeline Monitor asset type: " + response.statusText);
-          }
-          return response.json();
-        })
-        .then(function (responseData) {
-          log("Pipeline Monitor asset type created successfully: " + JSON.stringify(responseData));
+    // Then create Gas Monitor
+    return fetch(tableItemsUrl, gasMonitorOptions);
+  })
+  .then(function (response) {
+    if (!response.ok) {
+      throw new Error("Failed to create Gas Monitor asset type: " + response.statusText);
+    } else {
+      return response.json();
+    }
+  })
+  .then(function (responseData) {
+    console.debug("Gas Monitor asset type created successfully");
 
-          // Then create Gas Monitor
-          return fetch(tableItemsUrl, gasMonitorOptions);
-        })
-        .then(function (response) {
-          if (!response.ok) {
-            throw new Error("Failed to create Gas Monitor asset type: " + response.statusText);
-          }
-          return response.json();
-        })
-        .then(function (responseData) {
-          log("Gas Monitor asset type created successfully: " + JSON.stringify(responseData));
+    // Then create Liquefaction Train
+    return fetch(tableItemsUrl, liquefactionTrainOptions);
+  })
+  .then(function (response) {
+    if (!response.ok) {
+      throw new Error("Failed to create Liquefaction Train asset type: " + response.statusText);
+    } else {
+      return response.json();
+    }
+  })
+  .then(function (responseData) {
+    console.debug("Liquefaction Train asset type created successfully");
 
-          // Then create Liquefaction Train
-          return fetch(tableItemsUrl, liquefactionTrainOptions);
-        })
-        .then(function (response) {
-          if (!response.ok) {
-            throw new Error("Failed to create Liquefaction Train asset type: " + response.statusText);
-          }
-          return response.json();
-        })
-        .then(function (responseData) {
-          log("Liquefaction Train asset type created successfully: " + JSON.stringify(responseData));
+    // Create MQTT client and publish messages
 
-          // Create MQTT client and publish messages
-          const mqttClient = new MQTT.Client();
-          const timestampStr = new Date().toISOString();
+    const timestampStr = new Date().toISOString();
 
-          // Create Tank 1
-          const message = {
-            last_updated: timestampStr,
-            id: "Storage Tank 1",
-            type: "LNG Storage Tank",
-            group_ids: ["default"],
-            label: "Tank #1",
-            latitude: 30.038380617088748,
-            longitude: -93.33530369176137,
-            custom_data: {
-              "Filled Volume": 121031,
-              "Temperature": -160,
-              "Pressure": 95
-            }
-          };
+    // Create Tank 1
+    const message = {
+      last_updated: timestampStr,
+      id: "Storage Tank 1",
+      type: "LNG Storage Tank",
+      group_ids: ["default"],
+      label: "Tank #1",
+      latitude: 30.038380617088748,
+      longitude: -93.33530369176137,
+      custom_data: {
+        "Filled Volume": 121031,
+        "Temperature": -160,
+        "Pressure": 95
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(message));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(message));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(message));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(message));
 
-          // Create Tank 2
-          const message2 = {
-            last_updated: timestampStr,
-            id: "Storage Tank 2",
-            type: "LNG Storage Tank",
-            group_ids: ["default"],
-            label: "Tank #2",
-            latitude: 30.03828773855659,
-            longitude: -93.33678427103004,
-            custom_data: {
-              "Filled Volume": 91802,
-              "Temperature": -159,
-              "Pressure": 103
-            }
-          };
+    // Create Tank 2
+    const message2 = {
+      last_updated: timestampStr,
+      id: "Storage Tank 2",
+      type: "LNG Storage Tank",
+      group_ids: ["default"],
+      label: "Tank #2",
+      latitude: 30.03828773855659,
+      longitude: -93.33678427103004,
+      custom_data: {
+        "Filled Volume": 91802,
+        "Temperature": -159,
+        "Pressure": 103
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(message2));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(message2));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(message2));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(message2));
 
-          // Create Tank 3
-          const message3 = {
-            last_updated: timestampStr,
-            id: "Storage Tank 3",
-            type: "LNG Storage Tank",
-            group_ids: ["default"],
-            label: "Tank #3",
-            latitude: 30.03828773855659,
-            longitude: -93.33826485029873,
-            custom_data: {
-              "Filled Volume": 116719,
-              "Temperature": -163,
-              "Pressure": 102
-            }
-          };
+    // Create Tank 3
+    const message3 = {
+      last_updated: timestampStr,
+      id: "Storage Tank 3",
+      type: "LNG Storage Tank",
+      group_ids: ["default"],
+      label: "Tank #3",
+      latitude: 30.03828773855659,
+      longitude: -93.33826485029873,
+      custom_data: {
+        "Filled Volume": 116719,
+        "Temperature": -163,
+        "Pressure": 102
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(message3));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(message3));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(message3));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(message3));
 
-          // Create Gas Monitor
-          const gasMonitorMessage = {
-            last_updated: timestampStr,
-            id: "Southeast Gas Monitor",
-            type: "GasMonitor",
-            group_ids: ["default"],
-            label: "Southeast Gas Monitor",
-            latitude: 30.04168065947075,
-            longitude: -93.33368875501691,
-            custom_data: {
-              "operator_name": "QA Team",
-              "company_name": "Cameron LNG",
-              "service_date": "2024-02-18T16:15:00.000Z",
-              "calibration_date": "2024-02-18T16:15:00.000Z",
-              "sensor_info": "OK",
-              "gas_sensor_type": "LNG",
-              "pressure": 1.3,
-              "temperature": 91,
-              "wind_speed": 11,
-              "wind_direction": "East",
-              "gas_concentration": 4
-            }
-          };
+    // Create Gas Monitor
+    const gasMonitorMessage = {
+      last_updated: timestampStr,
+      id: "Southeast Gas Monitor",
+      type: "GasMonitor",
+      group_ids: ["default"],
+      label: "Southeast Gas Monitor",
+      latitude: 30.04168065947075,
+      longitude: -93.33368875501691,
+      custom_data: {
+        "operator_name": "QA Team",
+        "company_name": "Cameron LNG",
+        "service_date": "2024-02-18T16:15:00.000Z",
+        "calibration_date": "2024-02-18T16:15:00.000Z",
+        "sensor_info": "OK",
+        "gas_sensor_type": "LNG",
+        "pressure": 1.3,
+        "temperature": 91,
+        "wind_speed": 11,
+        "wind_direction": "East",
+        "gas_concentration": 4
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(gasMonitorMessage));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(gasMonitorMessage));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(gasMonitorMessage));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(gasMonitorMessage));
 
-          // Create Northwest Gas Monitor
-          const northwestGasMonitorMessage = {
-            last_updated: timestampStr,
-            id: "Northwest Gas Monitor",
-            type: "GasMonitor",
-            group_ids: ["default"],
-            label: "Northwest Gas Monitor",
-            latitude: 30.049176638594936,
-            longitude: -93.33822394178335,
-            custom_data: {
-              "operator_name": "QA Team",
-              "company_name": "Cameron LNG",
-              "service_date": "2024-10-01T16:20:00.000Z",
-              "calibration_date": "2024-10-01T16:20:00.000Z",
-              "sensor_info": "OK",
-              "gas_sensor_type": "LNG",
-              "pressure": 2,
-              "temperature": 61,
-              "wind_speed": 16,
-              "wind_direction": "East",
-              "gas_concentration": 3
-            }
-          };
+    // Create Northwest Gas Monitor
+    const northwestGasMonitorMessage = {
+      last_updated: timestampStr,
+      id: "Northwest Gas Monitor",
+      type: "GasMonitor",
+      group_ids: ["default"],
+      label: "Northwest Gas Monitor",
+      latitude: 30.049176638594936,
+      longitude: -93.33822394178335,
+      custom_data: {
+        "operator_name": "QA Team",
+        "company_name": "Cameron LNG",
+        "service_date": "2024-10-01T16:20:00.000Z",
+        "calibration_date": "2024-10-01T16:20:00.000Z",
+        "sensor_info": "OK",
+        "gas_sensor_type": "LNG",
+        "pressure": 2,
+        "temperature": 61,
+        "wind_speed": 16,
+        "wind_direction": "East",
+        "gas_concentration": 3
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(northwestGasMonitorMessage));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(northwestGasMonitorMessage));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(northwestGasMonitorMessage));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(northwestGasMonitorMessage));
 
-          // Create Incoming Pipeline Monitor
-          const incomingPipelineMessage = {
-            last_updated: timestampStr,
-            id: "Incoming Pipeline Monitor",
-            type: "Pipeline Monitor",
-            group_ids: ["default"],
-            label: "Incoming Pipeline Monitor",
-            latitude: 30.055263562773945,
-            longitude: -93.33499792460637,
-            custom_data: {
-              "operator_name": "QA Team",
-              "company_name": "Cameron LNG",
-              "pipeline_name": "Incoming Main",
-              "service_date": "2024-02-18T16:15:00.000Z",
-              "calibration_date": "2024-02-18T16:15:00.000Z",
-              "pressure": 1017.1,
-              "flow_rate": 4.9,
-              "temperature": 40,
-              "valve_status": true,
-              "total_flow": 81519.4
-            }
-          };
+    // Create Incoming Pipeline Monitor
+    const incomingPipelineMessage = {
+      last_updated: timestampStr,
+      id: "Incoming Pipeline Monitor",
+      type: "Pipeline Monitor",
+      group_ids: ["default"],
+      label: "Incoming Pipeline Monitor",
+      latitude: 30.055263562773945,
+      longitude: -93.33499792460637,
+      custom_data: {
+        "operator_name": "QA Team",
+        "company_name": "Cameron LNG",
+        "pipeline_name": "Incoming Main",
+        "service_date": "2024-02-18T16:15:00.000Z",
+        "calibration_date": "2024-02-18T16:15:00.000Z",
+        "pressure": 1017.1,
+        "flow_rate": 4.9,
+        "temperature": 40,
+        "valve_status": true,
+        "total_flow": 81519.4
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(incomingPipelineMessage));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(incomingPipelineMessage));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(incomingPipelineMessage));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(incomingPipelineMessage));
 
-          // Create LNG Vessel 1
-          const lngVesselMessage = {
-            last_updated: timestampStr,
-            id: "LNG Vessel 1",
-            type: "CargoContainer",
-            group_ids: ["default"],
-            label: "LNG Vessel 1",
-            latitude: 30.0408785849939,
-            longitude: -93.33232075591829,
-            custom_data: {
-              "operator_name": "Clint Ferris",
-              "company_name": "ENGIE",
-              "service_date": "2025-02-11T00:00:00.000Z",
-              "calibration_date": "2024-04-02T00:00:00.000Z",
-              "deliver_by": "2025-02-10T00:00:00.000Z",
-              "origin": "South Hook LNG Terminal",
-              "destination": "Cameron LNG",
-              "tank_temperature": -161,
-              "pressure": 94,
-              "volume": 139180,
-              "status": "Complete",
-              "time_on_location": 14
-            }
-          };
+    // Create LNG Vessel 1
+    const lngVesselMessage = {
+      last_updated: timestampStr,
+      id: "LNG Vessel 1",
+      type: "CargoContainer",
+      group_ids: ["default"],
+      label: "LNG Vessel 1",
+      latitude: 30.0408785849939,
+      longitude: -93.33232075591829,
+      custom_data: {
+        "operator_name": "Clint Ferris",
+        "company_name": "ENGIE",
+        "service_date": "2025-02-11T00:00:00.000Z",
+        "calibration_date": "2024-04-02T00:00:00.000Z",
+        "deliver_by": "2025-02-10T00:00:00.000Z",
+        "origin": "South Hook LNG Terminal",
+        "destination": "Cameron LNG",
+        "tank_temperature": -161,
+        "pressure": 94,
+        "volume": 139180,
+        "status": "Complete",
+        "time_on_location": 14
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(lngVesselMessage));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(lngVesselMessage));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(lngVesselMessage));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(lngVesselMessage));
 
-          // Create LNG Vessel 2
-          const lngVessel2Message = {
-            last_updated: timestampStr,
-            id: "LNG Vessel 2",
-            type: "CargoContainer",
-            group_ids: ["default"],
-            label: "LNG Vessel 2",
-            latitude: 30.037072576865867,
-            longitude: -93.33259048152857,
-            custom_data: {
-              "operator_name": "Contract 2910",
-              "company_name": "Mitsui & Co.",
-              "service_date": "2024-09-10T11:22:00.000Z",
-              "calibration_date": "2024-08-01T12:00:00.000Z",
-              "deliver_by": "2025-06-06T00:00:00.000Z",
-              "origin": "Corpus Christi LNG",
-              "destination": "Cameron LNG",
-              "pressure": 92,
-              "tank_temperature": -159,
-              "volume": 153810,
-              "weight": 52,
-              "perishable": true,
-              "status": "Transferring LNG",
-              "time_on_location": 32
-            }
-          };
+    // Create LNG Vessel 2
+    const lngVessel2Message = {
+      last_updated: timestampStr,
+      id: "LNG Vessel 2",
+      type: "CargoContainer",
+      group_ids: ["default"],
+      label: "LNG Vessel 2",
+      latitude: 30.037072576865867,
+      longitude: -93.33259048152857,
+      custom_data: {
+        "operator_name": "Contract 2910",
+        "company_name": "Mitsui & Co.",
+        "service_date": "2024-09-10T11:22:00.000Z",
+        "calibration_date": "2024-08-01T12:00:00.000Z",
+        "deliver_by": "2025-06-06T00:00:00.000Z",
+        "origin": "Corpus Christi LNG",
+        "destination": "Cameron LNG",
+        "pressure": 92,
+        "tank_temperature": -159,
+        "volume": 153810,
+        "weight": 52,
+        "perishable": true,
+        "status": "Transferring LNG",
+        "time_on_location": 32
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(lngVessel2Message));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(lngVessel2Message));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(lngVessel2Message));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(lngVessel2Message));
 
-          // Create Train 1
-          const train1Message = {
-            last_updated: timestampStr,
-            id: "Train 1",
-            type: "Liquefaction Train",
-            group_ids: ["default"],
-            label: "Train #1",
-            latitude: 30.042690085349793,
-            longitude: -93.33599033701825,
-            custom_data: {
-              "Natural Gas Feed Temperature": 42.6,
-              "Liquified Gas Temperature": -160,
-              "Acid Gas Removal Temperature": 27.8,
-              "Acid Gas Removal Pressure": 19.2,
-              "Acid Gas Removal Status": "Complete",
-              "Gas Chilling Temperature": -23.6,
-              "Gas Chilling Pressure": 4.9,
-              "Gas Chilling Status": "In Progress",
-              "Propane Level": 79.3
-            }
-          };
+    // Create Train 1
+    const train1Message = {
+      last_updated: timestampStr,
+      id: "Train 1",
+      type: "Liquefaction Train",
+      group_ids: ["default"],
+      label: "Train #1",
+      latitude: 30.042690085349793,
+      longitude: -93.33599033701825,
+      custom_data: {
+        "Natural Gas Feed Temperature": 42.6,
+        "Liquified Gas Temperature": -160,
+        "Acid Gas Removal Temperature": 27.8,
+        "Acid Gas Removal Pressure": 19.2,
+        "Acid Gas Removal Status": "Complete",
+        "Gas Chilling Temperature": -23.6,
+        "Gas Chilling Pressure": 4.9,
+        "Gas Chilling Status": "In Progress",
+        "Propane Level": 79.3
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(train1Message));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(train1Message));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(train1Message));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(train1Message));
 
           // Create Train 2
-          const train2Message = {
-            last_updated: timestampStr,
-            id: "Train 2",
-            type: "Liquefaction Train",
-            group_ids: ["default"],
-            label: "Train #2",
-            latitude: 30.046535012916006,
-            longitude: -93.33605471002993,
-            custom_data: {
-              "Natural Gas Feed Temperature": 41.8,
-              "Liquified Gas Temperature": -162,
-              "Acid Gas Removal Temperature": 28.3,
-              "Acid Gas Removal Pressure": 18.9,
-              "Acid Gas Removal Status": "In Progress",
-              "Gas Chilling Temperature": -24.1,
-              "Gas Chilling Pressure": 5.2,
-              "Gas Chilling Status": "Complete",
-              "Propane Level": 82.7
-            }
-          };
+    const train2Message = {
+      last_updated: timestampStr,
+      id: "Train 2",
+      type: "Liquefaction Train",
+      group_ids: ["default"],
+      label: "Train #2",
+      latitude: 30.046535012916006,
+      longitude: -93.33605471002993,
+      custom_data: {
+        "Natural Gas Feed Temperature": 41.8,
+        "Liquified Gas Temperature": -162,
+        "Acid Gas Removal Temperature": 28.3,
+        "Acid Gas Removal Pressure": 18.9,
+        "Acid Gas Removal Status": "In Progress",
+        "Gas Chilling Temperature": -24.1,
+        "Gas Chilling Pressure": 5.2,
+        "Gas Chilling Status": "Complete",
+        "Propane Level": 82.7
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(train2Message));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(train2Message));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(train2Message));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(train2Message));
 
-          // Create Train 3
-          const train3Message = {
-            last_updated: timestampStr,
-            id: "Train 3",
-            type: "Liquefaction Train",
-            group_ids: ["default"],
-            label: "Train #3",
-            latitude: 30.049562556164425,
-            longitude: -93.33616199838274,
-            custom_data: {
-              "Natural Gas Feed Temperature": 43.2,
-              "Liquified Gas Temperature": -158,
-              "Acid Gas Removal Temperature": 26.9,
-              "Acid Gas Removal Pressure": 19.5,
-              "Acid Gas Removal Status": "Complete",
-              "Gas Chilling Temperature": -22.8,
-              "Gas Chilling Pressure": 4.7,
-              "Gas Chilling Status": "In Progress",
-              "Propane Level": 75.9
-            }
-          };
+    // Create Train 3
+    const train3Message = {
+      last_updated: timestampStr,
+      id: "Train 3",
+      type: "Liquefaction Train",
+      group_ids: ["default"],
+      label: "Train #3",
+      latitude: 30.049562556164425,
+      longitude: -93.33616199838274,
+      custom_data: {
+        "Natural Gas Feed Temperature": 43.2,
+        "Liquified Gas Temperature": -158,
+        "Acid Gas Removal Temperature": 26.9,
+        "Acid Gas Removal Pressure": 19.5,
+        "Acid Gas Removal Status": "Complete",
+        "Gas Chilling Temperature": -22.8,
+        "Gas Chilling Pressure": 4.7,
+        "Gas Chilling Status": "In Progress",
+        "Propane Level": 75.9
+      }
+    };
 
-          mqttClient.publish("_monitor/asset/default/data", JSON.stringify(train3Message));
-          log("Published message to _monitor/asset/default/data: " + JSON.stringify(train3Message));
+    mqttClient.publish("_monitor/asset/default/data", JSON.stringify(train3Message));
+    console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(train3Message));
 
-          resp.success("All asset types created successfully and messages published");
-        })
-        .catch(function (error) {
-          log("Error creating asset types: " + error);
-          resp.error("Failed to create asset types: " + error);
-        });
-    });
+    resp.success("All asset types created successfully and messages published");
+   })
+  .catch(function (error) {
+    console.error(error);
+    resp.error(error);
   });
 }

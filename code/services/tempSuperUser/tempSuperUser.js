@@ -15,9 +15,10 @@
 function tempSuperUser(req, resp) {
   const params = req.params;
 
+  console.debug(req);
+
   // Execute createSuperUser service
-  var codeService = ClearBlade.Code();
-  codeService.execute("createSuperUser", {
+  ClearBladeAsync.Code().execute("createSuperUser", {
     "email": "iacomponentr@clearblade.com",
     "first_name": "IA",
     "last_name": "Component",
@@ -25,24 +26,25 @@ function tempSuperUser(req, resp) {
     "group_ids": [
       "default"
     ]
-  }, true, function (err, data) {
-    if (err) {
-      resp.error("Failed to execute createSuperUser service: " + JSON.stringify(err));
+  }, true)
+  .then(function(response) {
+    console.debug("Returned from createSuperUser")
+    console.debug(response);
+
+    if (!response.success) {
+      resp.error("Failed to execute createSuperUser service: " + JSON.stringify(response.results));
       return;
     }
 
-    try {
-      // The data might already be parsed, so we need to handle both cases
-      const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
-      const userId = parsedData.results.user_id;
-      
-      if (!userId) {
-        resp.error("Failed to get user_id from createSuperUser response");
-        return;
-      }
+    if (!response.results.user_id) {
+      resp.error("Failed to get user_id from createSuperUser response");
+      return;
+    }
 
-      // Make PUT request to set service account flag
-      fetch("https://demo.clearblade.com/admin/user/" + req.systemKey + "?user=" + userId, {
+    console.debug("Updating user");
+
+    // Make PUT request to set service account flag
+    return fetch("https://" + cbmeta.platform_url + "/admin/user/" + req.systemKey + "?user=" + response.results.user_id, {
         "headers": {
           "accept": "*/*",
           "clearblade-devtoken": req.userToken,
@@ -55,27 +57,34 @@ function tempSuperUser(req, resp) {
           "changes": {
             "cb_service_account": true
           },
-          "user": userId
+          "user": response.results.user_id
         }),
         "method": "PUT",
         "mode": "cors",
         "credentials": "include"
-      })
-        .then(function(response) {
-          if (!response.ok) {
-            throw new Error("Failed to update user: " + response.statusText);
-          }
-          return response.json();
-        })
-        .then(function(responseData) {
-          log("User updated successfully: " + JSON.stringify(responseData));
-          resp.success("Super user created and service account flag set successfully");
-        })
-        .catch(function(error) {
-          resp.error("Failed to update user: " + JSON.stringify(error));
-        });
-    } catch (parseErr) {
-      resp.error("Failed to parse createSuperUser response: " + JSON.stringify(parseErr));
+      });
+  })
+  .then(function(response) {
+    console.debug("Returned from updating user");
+    console.debug(response);
+
+    if (!response.ok) {
+      throw new Error("Failed to update user: " + response.statusText);
     }
+
+    console.debug("typeof response.body = " + (typeof response.body));
+
+    if (response.body && Object.keys(response.body).length > 0) {
+      console.debug("Invoking response.json()");
+      return response.json();
+    }
+    return Promise.resolve("");
+  })
+  .then(function(response) {
+    log("User updated successfully: " + JSON.stringify(response));
+    resp.success("Super user created and service account flag set successfully");
+  })
+  .catch(function(error) {
+    resp.error("Error creating and updating super user: " + JSON.stringify(error));
   });
 }
