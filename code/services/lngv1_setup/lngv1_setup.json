@@ -10,7 +10,7 @@
     "params": [
         ""
     ],
-    "run_on_edge": true,
+    "run_on_edge": false,
     "run_on_platform": true,
     "run_user": ""
 }
