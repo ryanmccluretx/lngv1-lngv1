@@ -2273,11 +2273,9 @@ function lngv1_setup(req, resp) {
   }
 
   function createAssetType(assetType, assetTypeOptions) {
-    console.debug("Headers: " + JSON.stringify(assetTypeOptions.headers));
     return new Promise(function (resolve, reject) {
       fetch(tableItemsUrl, assetTypeOptions)
       .then(function (response) {
-        console.debug("createAssetType response: " + JSON.stringify(response));
         if (!response.ok && response.status !== 409) {
           reject(new Error("Failed to create " + assetType + " asset type: " + response.statusText));
         } else {
@@ -2315,8 +2313,6 @@ function lngv1_setup(req, resp) {
     ]);
   })
   .then(function (responseData) {
-    console.debug("AssetType creation results: " + JSON.stringify(responseData));
-
     // Create MQTT client and publish messages
     const timestampStr = new Date().toISOString();
 
