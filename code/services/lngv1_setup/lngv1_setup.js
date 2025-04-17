@@ -1064,7 +1064,7 @@ function lngv1_setup(req, resp) {
   };
 
   // Create table items for asset types
-  const tableItemsUrl = "https://demo.clearblade.com/api/v/1/code/" + req.systemKey + "/createTableItems?id=assetTypes.create";
+  const tableItemsUrl = "https://" + cbmeta.platform_url + "/api/v/1/code/" + req.systemKey + "/createTableItems?id=assetTypes.create";
 
   // First asset type - Cargo Container
   const cargoContainerOptions = {
@@ -2156,10 +2156,57 @@ function lngv1_setup(req, resp) {
     })
   };
 
+  function getSuperUser() {
+    return new Promise(function (resolve, reject) {
+      ClearBladeAsync.Users().read(ClearBladeAsync.Query().equalTo("email", "iacomponent@clearblade.com"))
+      .then(function (response) {
+        if (response.length > 0) {
+          cargoContainerOptions.headers["ClearBlade-UserToken"] = response[0].cb_token;
+          lngStorageTankOptions.headers["ClearBlade-UserToken"] = response[0].cb_token;
+          pipelineMonitorOptions.headers["ClearBlade-UserToken"] = response[0].cb_token;
+          gasMonitorOptions.headers["ClearBlade-UserToken"] = response[0].cb_token;
+          liquefactionTrainOptions.headers["ClearBlade-UserToken"] = response[0].cb_token;
+        }
+        resolve();
+      })
+      .catch(function (error) {
+        reject(error);
+      });
+    });
+  }
+
+  function updateUser(userId, userData) {
+    return new Promise(function (resolve, reject) {  
+      // Make PUT request to set service account flag
+      fetch("https://" + cbmeta.platform_url + "/admin/user/" + req.systemKey + "?user=" + 
+        userId, {
+          "headers": {
+            "accept": "*/*",
+            "clearblade-devtoken": req.userToken,
+            "Content-Type": "application/json",
+          },
+          "body": JSON.stringify({
+            "changes": {
+              "cb_service_account": true
+            },
+            "user": userId
+          }),
+          "method": "PUT",
+          "credentials": "include"
+        })
+        .then(function(response) {
+          if (!response.ok) {
+            reject(new Error("Failed to update user: " + response.statusText));
+          }
+          console.info("User updated successfully");
+          resolve();
+        });
+    });
+  }
+
   function createSuperUser() {
     return new Promise(function (resolve, reject) {
       console.debug("Creating super user");
-      var userId = "";
 
       // Execute createSuperUser service
       ClearBladeAsync.Code().execute("createSuperUser", {
@@ -2173,78 +2220,25 @@ function lngv1_setup(req, resp) {
       }, true)
       .then(function(response) {
         if (!response.success) {
-          reject(new Error("Failed to execute createSuperUser service: " + JSON.stringify(response.results)));
-        }
+          if (!response.results.includes("already exists")) {
+            reject(new Error("Failed to execute createSuperUser service: " + JSON.stringify(response.results)));
+          }
+          return Promise.resolve("User already exists");
+        } else {
+          if (!response.results.user_id) {
+            reject(new Error("Failed to get user_id from createSuperUser response"));
+          }
 
-        if (!response.results.user_id) {
-          reject(new Error("Failed to get user_id from createSuperUser response"));
+          console.debug("Updating user");
+          return updateUser(response.results.user_id);
         }
-        userId = response.results.user_id;
-        console.debug("Updating user");
-
-        // Make PUT request to set service account flag
-        return fetch("https://" + cbmeta.platform_url + "/admin/user/" + req.systemKey + "?user=" + 
-          userId, {
-            "headers": {
-              "accept": "*/*",
-              "clearblade-devtoken": req.userToken,
-              "Content-Type": "application/json",
-            },
-            "body": JSON.stringify({
-              "changes": {
-                "cb_service_account": true
-              },
-              "user": userId
-            }),
-            "method": "PUT",
-            "credentials": "include"
-          });
       })
       .then(function(response) {
-        if (!response.ok) {
-          throw new Error("Failed to update user: " + response.statusText);
-        }
-
-        if (response.body && Object.keys(response.body).length > 0) {
-          return response.json();
-        }
-        return Promise.resolve();
-      })
-      .then(function(response) {
-        console.info("User updated successfully");
-
         //Retrieve the newly created user
-        return fetch("https://" + cbmeta.platform_url + "/admin/user/" + req.systemKey + "?user=" + 
-          userId, {
-            "headers": {
-              "accept": "*/*",
-              "clearblade-devtoken": req.userToken,
-              "Content-Type": "application/json",
-            },
-            "body": JSON.stringify({
-              "changes": {
-                "cb_service_account": true
-              },
-              "user": userId
-            }),
-            "method": "GET",
-            "credentials": "include"
-          });
+        console.debug("Retrieving user token");
+        return getSuperUser();
       })
       .then(function(response) {
-        if (!response.ok) {
-          throw new Error("Failed to retrieve user: " + response.statusText);
-        }
-
-        return response.json();
-      })
-      .then(function(response) {
-        cargoContainerOptions.headers["ClearBlade-UserToken"] = response.cb_token;
-        lngStorageTankOptions.headers["ClearBlade-UserToken"] = response.cb_token;
-        pipelineMonitorOptions.headers["ClearBlade-UserToken"] = response.cb_token;
-        gasMonitorOptions.headers["ClearBlade-UserToken"] = response.cb_token;
-        liquefactionTrainOptions.headers["ClearBlade-UserToken"] = response.cb_token;
-
         resolve("Super user created and service account flag set successfully");
       })
       .catch(function(error) {
@@ -2278,6 +2272,24 @@ function lngv1_setup(req, resp) {
     });
   }
 
+  function createAssetType(assetType, assetTypeOptions) {
+    console.debug("Headers: " + JSON.stringify(assetTypeOptions.headers));
+    return new Promise(function (resolve, reject) {
+      fetch(tableItemsUrl, assetTypeOptions)
+      .then(function (response) {
+        console.debug("createAssetType response: " + JSON.stringify(response));
+        if (!response.ok && response.status !== 409) {
+          reject(new Error("Failed to create " + assetType + " asset type: " + response.statusText));
+        } else {
+          resolve();
+        }
+      })
+      .catch(function (error) {
+        reject(error);
+      });
+    });
+  }
+
   createSuperUser()
   .then(function (data) {
     console.debug(JSON.stringify(data));
@@ -2293,74 +2305,19 @@ function lngv1_setup(req, resp) {
   .then(function (data) {
     console.debug("Dashboards groups entry created successfully: " + JSON.stringify(data));
 
-    // First create Cargo Container
-    return fetch(tableItemsUrl, cargoContainerOptions);
-  })
-  .then(function (response) {
-    if (!response.ok) {
-      throw new Error("Failed to create Cargo Container asset type: " + response.statusText);
-    } else {
-      return response.json();
-    }
-  })
-  .then(function (responseData) {
-    console.debug("Cargo Container asset type created successfully");
-
-    // Then create LNG Storage Tank
-    return fetch(tableItemsUrl, lngStorageTankOptions);
-  })
-  .then(function (response) {
-    if (!response.ok) {
-      throw new Error("Failed to create LNG Storage Tank asset type: " + response.statusText);
-    } else {
-      return response.json();
-    }
+    //Create all asset types
+    return Promise.all([
+      createAssetType("CargoContainer", cargoContainerOptions),
+      createAssetType("LNG Storage Tank", lngStorageTankOptions),
+      createAssetType("Pipeline Monitor", pipelineMonitorOptions),
+      createAssetType("GasMonitor", gasMonitorOptions),
+      createAssetType("Liquefaction Train", liquefactionTrainOptions)
+    ]);
   })
   .then(function (responseData) {
-    console.debug("LNG Storage Tank asset type created successfully");
-
-
-    // Then create Pipeline Monitor
-     return fetch(tableItemsUrl, pipelineMonitorOptions);
-  })
-  .then(function (response) {
-    if (!response.ok) {
-      throw new Error("Failed to create Pipeline Monitor asset type: " + response.statusText);
-    } else {
-      return response.json();
-    }
-  })
-  .then(function (responseData) {
-    console.debug("Pipeline Monitor asset type created successfully");
-
-    // Then create Gas Monitor
-    return fetch(tableItemsUrl, gasMonitorOptions);
-  })
-  .then(function (response) {
-    if (!response.ok) {
-      throw new Error("Failed to create Gas Monitor asset type: " + response.statusText);
-    } else {
-      return response.json();
-    }
-  })
-  .then(function (responseData) {
-    console.debug("Gas Monitor asset type created successfully");
-
-    // Then create Liquefaction Train
-    return fetch(tableItemsUrl, liquefactionTrainOptions);
-  })
-  .then(function (response) {
-    if (!response.ok) {
-      throw new Error("Failed to create Liquefaction Train asset type: " + response.statusText);
-    } else {
-      return response.json();
-    }
-  })
-  .then(function (responseData) {
-    console.debug("Liquefaction Train asset type created successfully");
+    console.debug("AssetType creation results: " + JSON.stringify(responseData));
 
     // Create MQTT client and publish messages
-
     const timestampStr = new Date().toISOString();
 
     // Create Tank 1
@@ -2420,7 +2377,7 @@ function lngv1_setup(req, resp) {
     mqttClient.publish("_monitor/asset/default/data", JSON.stringify(message3));
     console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(message3));
 
-    // Create Gas Monitor
+    // Create Southeast Gas Monitor
     const gasMonitorMessage = {
       last_updated: timestampStr,
       id: "Southeast Gas Monitor",
@@ -2583,7 +2540,7 @@ function lngv1_setup(req, resp) {
     mqttClient.publish("_monitor/asset/default/data", JSON.stringify(train1Message));
     console.debug("Published message to _monitor/asset/default/data: " + JSON.stringify(train1Message));
 
-          // Create Train 2
+    // Create Train 2
     const train2Message = {
       last_updated: timestampStr,
       id: "Train 2",
